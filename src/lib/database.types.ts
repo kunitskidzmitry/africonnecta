@@ -78,6 +78,52 @@ export type Database = {
           },
         ]
       }
+      contact_disclosures: {
+        Row: {
+          created_at: string
+          disclosed_to: string
+          expert_id: string
+          id: number
+          institution_id: string
+        }
+        Insert: {
+          created_at?: string
+          disclosed_to: string
+          expert_id: string
+          id?: never
+          institution_id: string
+        }
+        Update: {
+          created_at?: string
+          disclosed_to?: string
+          expert_id?: string
+          id?: never
+          institution_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_disclosures_disclosed_to_fkey"
+            columns: ["disclosed_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_disclosures_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_disclosures_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       countries: {
         Row: {
           id: number
@@ -466,6 +512,24 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_limits: {
+        Row: {
+          contact_disclosures_per_day: number
+          first_contacts_per_day: number
+          plan: string
+        }
+        Insert: {
+          contact_disclosures_per_day: number
+          first_contacts_per_day: number
+          plan: string
+        }
+        Update: {
+          contact_disclosures_per_day?: number
+          first_contacts_per_day?: number
+          plan?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string
@@ -501,6 +565,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_institution_id: { Args: never; Returns: string }
+      current_user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_admin: { Args: never; Returns: boolean }
+      is_member_of: {
+        Args: { target_institution_id: string }
+        Returns: boolean
+      }
+      is_owner_of: { Args: { target_institution_id: string }; Returns: boolean }
+      my_expert_profile: {
+        Args: never
+        Returns: {
+          academic_level: Database["public"]["Enums"]["academic_level"]
+          bio: string
+          country_id: number
+          current_institution_id: string
+          current_institution_name: string
+          cv_file_id: string
+          first_name: string
+          highest_degree: string
+          id: string
+          last_name: string
+          orcid_id: string
+          phone: string
+          photo_file_id: string
+          profile_visibility: Database["public"]["Enums"]["profile_visibility"]
+          published_at: string
+          title: string
+        }[]
+      }
+      reveal_expert_contacts: {
+        Args: { target_expert_id: string }
+        Returns: {
+          cv_file_id: string
+          email: string
+          phone: string
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }

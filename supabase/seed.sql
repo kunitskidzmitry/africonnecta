@@ -52,7 +52,52 @@ values
    '33333333-3333-3333-3333-333333333333',
    'authenticated', 'authenticated', 'admin@example.test',
    crypt('password123', gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+
+  -- Второй эксперт: нужен, чтобы отличать «свой профиль» от «чужого». Без него
+  -- строка матрицы «Expert (чужой)» непроверяема, а именно там живут IDOR.
+  ('00000000-0000-0000-0000-000000000000',
+   '44444444-4444-4444-4444-444444444444',
+   'authenticated', 'authenticated', 'expert.hidden@example.test',
+   crypt('password123', gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+
+  -- Эксперт с неопубликованным профилем.
+  ('00000000-0000-0000-0000-000000000000',
+   '55555555-5555-5555-5555-555555555555',
+   'authenticated', 'authenticated', 'expert.draft@example.test',
+   crypt('password123', gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+
+  -- Представитель институции, которую ещё не проверили: право на контакты
+  -- появляется только после верификации (§9).
+  ('00000000-0000-0000-0000-000000000000',
+   '66666666-6666-6666-6666-666666666666',
+   'authenticated', 'authenticated', 'unverified@example.test',
+   crypt('password123', gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+
+  -- Заблокированный пользователь: проверяет, что статус отбирает права.
+  ('00000000-0000-0000-0000-000000000000',
+   '77777777-7777-7777-7777-777777777777',
+   'authenticated', 'authenticated', 'suspended@example.test',
+   crypt('password123', gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now());
+
+-- GoTrue не умеет сканировать NULL в строковые токены
+-- («converting NULL to string is unsupported»). Пользователи, созданные
+-- через API, получают пустые строки; прямая вставка должна делать то же.
+update auth.users
+set
+  confirmation_token = '',
+  recovery_token = '',
+  email_change_token_new = '',
+  email_change_token_current = '',
+  email_change = '',
+  phone_change = '',
+  phone_change_token = '',
+  reauthentication_token = ''
+where email like '%@example.test';
 
 -- Без записи в auth.identities вход по паролю не работает.
 insert into auth.identities (provider_id, user_id, identity_data, provider, created_at, updated_at)
@@ -72,7 +117,11 @@ from auth.users u;
 insert into users (id, role, status) values
   ('11111111-1111-1111-1111-111111111111', 'expert', 'active'),
   ('22222222-2222-2222-2222-222222222222', 'institution_member', 'active'),
-  ('33333333-3333-3333-3333-333333333333', 'admin', 'active');
+  ('33333333-3333-3333-3333-333333333333', 'admin', 'active'),
+  ('44444444-4444-4444-4444-444444444444', 'expert', 'active'),
+  ('55555555-5555-5555-5555-555555555555', 'expert', 'active'),
+  ('66666666-6666-6666-6666-666666666666', 'institution_member', 'active'),
+  ('77777777-7777-7777-7777-777777777777', 'expert', 'suspended');
 
 -- ---------------------------------------------------------------------------
 -- Институция
@@ -97,6 +146,23 @@ values (
 insert into institution_members (institution_id, user_id, role) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-2222-2222-2222-222222222222', 'owner');
 
+-- Институция без верификации: verified_at пустой.
+insert into institutions (
+  id, name, type, country_id, website, contact_person, contact_email
+)
+values (
+  'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+  'Unverified Research Group',
+  'research_institute',
+  (select id from countries where iso2 = 'KE'),
+  'https://urg.example',
+  'Not Checked Yet',
+  'unverified@example.test'
+);
+
+insert into institution_members (institution_id, user_id, role) values
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '66666666-6666-6666-6666-666666666666', 'owner');
+
 -- ---------------------------------------------------------------------------
 -- Профиль эксперта
 --
@@ -106,7 +172,7 @@ insert into institution_members (institution_id, user_id, role) values
 
 insert into experts (
   id, user_id, first_name, last_name, title, academic_level, highest_degree,
-  current_institution_id, current_institution_name, country_id, bio,
+  current_institution_id, current_institution_name, country_id, bio, phone,
   profile_visibility, published_at
 )
 values (
@@ -120,8 +186,41 @@ values (
   'University of Rwanda',
   (select id from countries where iso2 = 'RW'),
   'Lecturer in Economics working on development policy and climate adaptation in East Africa.',
+  '+250788123456',
   'public',
   now()
+);
+
+-- Скрытый профиль: опубликован, но владелец не хочет быть найденным.
+-- Не показывается никому, кроме самого владельца и администратора.
+insert into experts (
+  id, user_id, first_name, last_name, current_institution_name, country_id,
+  phone, profile_visibility, published_at
+)
+values (
+  'cccccccc-cccc-cccc-cccc-cccccccccccc',
+  '44444444-4444-4444-4444-444444444444',
+  'Grace', 'Nyirahabimana',
+  'Makerere University',
+  (select id from countries where iso2 = 'UG'),
+  '+256700111222',
+  'hidden',
+  now()
+);
+
+-- Черновик: профиль заполняется, публикации ещё не было.
+insert into experts (
+  id, user_id, first_name, last_name, current_institution_name, country_id,
+  phone, profile_visibility
+)
+values (
+  'dddddddd-dddd-dddd-dddd-dddddddddddd',
+  '55555555-5555-5555-5555-555555555555',
+  'Samuel', 'Otieno',
+  'University of Nairobi',
+  (select id from countries where iso2 = 'KE'),
+  '+254700333444',
+  'public'
 );
 
 insert into expert_expertise (expert_id, expertise_id, is_primary, years_experience)

@@ -1,0 +1,546 @@
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { Client } from 'pg';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+/**
+ * Матрица доступа (WP4). Соответствует §8.1 docs/implementation-prompt.md.
+ *
+ * По тесту на каждую пару «роль — действие», как требует §12. Это не формальность:
+ * именно здесь живут IDOR-уязвимости, и найти их иначе, чем перебором ролей, нельзя —
+ * код выглядит правильным в обоих случаях, разница видна только в результате запроса.
+ *
+ * Каждый актёр входит настоящим паролем и работает публичным ключом. Служебный ключ,
+ * обходящий RLS, не используется: тест обязан видеть систему теми же глазами, что и
+ * посетитель, иначе он проверяет не то, что защищает продакшен.
+ *
+ * Данные берутся из supabase/seed.sql с фиксированными идентификаторами.
+ * Запуск: `npm run db:reset && npm run test:integration`.
+ */
+
+const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
+const DATABASE_URL =
+  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const ANON_KEY =
+  process.env.SUPABASE_ANON_KEY ??
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+
+/** Идентификаторы из сида. */
+const EXPERT_PUBLIC = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+const EXPERT_HIDDEN = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+const EXPERT_DRAFT = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+const INSTITUTION_VERIFIED = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const INSTITUTION_UNVERIFIED = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+const USER_EXPERT = '11111111-1111-1111-1111-111111111111';
+
+const PASSWORD = 'password123';
+
+const ACTORS = {
+  expert: 'expert@example.test',
+  hiddenExpert: 'expert.hidden@example.test',
+  draftExpert: 'expert.draft@example.test',
+  institution: 'institution@example.test',
+  unverifiedInstitution: 'unverified@example.test',
+  admin: 'admin@example.test',
+  suspended: 'suspended@example.test',
+} as const;
+
+type ActorName = keyof typeof ACTORS;
+
+const clients = new Map<ActorName, SupabaseClient>();
+const db = new Client({ connectionString: DATABASE_URL });
+
+/** Клиент без сессии — так систему видит случайный посетитель. */
+function guest(): SupabaseClient {
+  return createClient(SUPABASE_URL, ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function as(actor: ActorName): SupabaseClient {
+  const client = clients.get(actor);
+  if (!client) throw new Error(`Актёр ${actor} не вошёл в систему`);
+  return client;
+}
+
+beforeAll(async () => {
+  await db.connect();
+
+  for (const [name, email] of Object.entries(ACTORS) as [ActorName, string][]) {
+    const client = guest();
+    const { error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
+
+    if (error) throw new Error(`Не удалось войти как ${name} (${email}): ${error.message}`);
+
+    clients.set(name, client);
+  }
+});
+
+afterAll(async () => {
+  await db.end();
+});
+
+// ---------------------------------------------------------------------------
+
+describe('чтение профиля эксперта', () => {
+  const visibleTo: [string, () => SupabaseClient][] = [
+    ['гость', guest],
+    ['эксперт (свой профиль)', () => as('expert')],
+    ['эксперт (чужой профиль)', () => as('hiddenExpert')],
+    ['представитель институции', () => as('institution')],
+    ['администратор', () => as('admin')],
+  ];
+
+  it.each(visibleTo)('опубликованный публичный профиль виден: %s', async (_name, client) => {
+    const { data } = await client()
+      .from('experts')
+      .select('id, first_name')
+      .eq('id', EXPERT_PUBLIC);
+
+    expect(data).toEqual([{ id: EXPERT_PUBLIC, first_name: 'Yves' }]);
+  });
+
+  const hiddenFrom: [string, () => SupabaseClient][] = [
+    ['гость', guest],
+    ['посторонний эксперт', () => as('expert')],
+    ['представитель институции', () => as('institution')],
+  ];
+
+  it.each(hiddenFrom)('скрытый профиль не виден: %s', async (_name, client) => {
+    const { data } = await client().from('experts').select('id').eq('id', EXPERT_HIDDEN);
+
+    expect(data).toEqual([]);
+  });
+
+  it('скрытый профиль виден своему владельцу', async () => {
+    const { data } = await as('hiddenExpert').from('experts').select('id').eq('id', EXPERT_HIDDEN);
+
+    expect(data).toEqual([{ id: EXPERT_HIDDEN }]);
+  });
+
+  it('скрытый профиль виден администратору', async () => {
+    const { data } = await as('admin').from('experts').select('id').eq('id', EXPERT_HIDDEN);
+
+    expect(data).toEqual([{ id: EXPERT_HIDDEN }]);
+  });
+
+  it.each(hiddenFrom)('неопубликованный черновик не виден: %s', async (_name, client) => {
+    const { data } = await client().from('experts').select('id').eq('id', EXPERT_DRAFT);
+
+    expect(data).toEqual([]);
+  });
+
+  it('черновик виден своему владельцу', async () => {
+    const { data } = await as('draftExpert').from('experts').select('id').eq('id', EXPERT_DRAFT);
+
+    expect(data).toEqual([{ id: EXPERT_DRAFT }]);
+  });
+
+  it('заблокированный пользователь не видит профили с видимостью для вошедших', async () => {
+    // У заблокированного сессия действительна до истечения токена, но роли нет,
+    // поэтому он приравнен к гостю.
+    const { data } = await as('suspended').from('experts').select('id').eq('id', EXPERT_HIDDEN);
+
+    expect(data).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('контакты эксперта: прямой доступ к колонкам', () => {
+  const everyone: [string, () => SupabaseClient][] = [
+    ['гость', guest],
+    ['эксперт', () => as('expert')],
+    ['представитель институции', () => as('institution')],
+    ['администратор', () => as('admin')],
+  ];
+
+  // Главная защита ценности продукта. RLS построчная и от этого запроса не спасает —
+  // права сняты на уровне колонок, поэтому запрос не выполняется ни у кого.
+  it.each(everyone)('телефон нельзя запросить напрямую: %s', async (_name, client) => {
+    const { data, error } = await client().from('experts').select('id, phone');
+
+    expect(error).not.toBeNull();
+    expect(data).toBeNull();
+  });
+
+  it.each(everyone)('select(*) закрыт, колонки перечисляются явно: %s', async (_name, client) => {
+    const { error } = await client().from('experts').select('*');
+
+    expect(error).not.toBeNull();
+  });
+
+  it('контактная почта институции тоже закрыта', async () => {
+    const { error } = await as('institution').from('institutions').select('id, contact_email');
+
+    expect(error).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('контакты эксперта: раскрытие через функцию', () => {
+  it('гость не получает контакты', async () => {
+    const { error } = await guest().rpc('reveal_expert_contacts', {
+      target_expert_id: EXPERT_PUBLIC,
+    });
+
+    expect(error).not.toBeNull();
+  });
+
+  it('эксперт получает собственные контакты', async () => {
+    const { data, error } = await as('expert').rpc('reveal_expert_contacts', {
+      target_expert_id: EXPERT_PUBLIC,
+    });
+
+    expect(error).toBeNull();
+    expect(data).toEqual([{ email: ACTORS.expert, phone: '+250788123456', cv_file_id: null }]);
+  });
+
+  // Строка матрицы «Expert (чужой) — контакты: ❌». Иначе достаточно зарегистрироваться
+  // экспертом, чтобы выгрузить базу.
+  it('эксперт не получает контакты другого эксперта', async () => {
+    const { error } = await as('hiddenExpert').rpc('reveal_expert_contacts', {
+      target_expert_id: EXPERT_PUBLIC,
+    });
+
+    expect(error?.code).toBe('42501');
+  });
+
+  it('институция без верификации получает отказ с понятной причиной', async () => {
+    const { error } = await as('unverifiedInstitution').rpc('reveal_expert_contacts', {
+      target_expert_id: EXPERT_PUBLIC,
+    });
+
+    expect(error?.code).toBe('AF002');
+  });
+
+  it('заблокированный пользователь получает отказ', async () => {
+    const { error } = await as('suspended').rpc('reveal_expert_contacts', {
+      target_expert_id: EXPERT_PUBLIC,
+    });
+
+    expect(error).not.toBeNull();
+  });
+
+  it('скрытый профиль не раскрывается даже верифицированной институции', async () => {
+    const { error } = await as('institution').rpc('reveal_expert_contacts', {
+      target_expert_id: EXPERT_HIDDEN,
+    });
+
+    expect(error?.code).toBe('42501');
+  });
+
+  it('верифицированная институция получает контакты и оставляет след в журнале', async () => {
+    await db.query('delete from public.contact_disclosures where institution_id = $1', [
+      INSTITUTION_VERIFIED,
+    ]);
+    await db.query("delete from public.audit_log where action = 'expert.contacts.reveal'");
+
+    const { data, error } = await as('institution').rpc('reveal_expert_contacts', {
+      target_expert_id: EXPERT_PUBLIC,
+    });
+
+    expect(error).toBeNull();
+    expect(data).toEqual([{ email: ACTORS.expert, phone: '+250788123456', cv_file_id: null }]);
+
+    const { rows: disclosures } = await db.query(
+      'select expert_id from public.contact_disclosures where institution_id = $1',
+      [INSTITUTION_VERIFIED],
+    );
+    expect(disclosures).toEqual([{ expert_id: EXPERT_PUBLIC }]);
+
+    const { rows: audit } = await db.query(
+      "select action, entity_id from public.audit_log where action = 'expert.contacts.reveal'",
+    );
+    expect(audit).toEqual([{ action: 'expert.contacts.reveal', entity_id: EXPERT_PUBLIC }]);
+  });
+
+  it('квота ограничивает новых экспертов, но не повторный просмотр', async () => {
+    await db.query('delete from public.contact_disclosures where institution_id = $1', [
+      INSTITUTION_VERIFIED,
+    ]);
+    // В сиде мало публичных профилей, поэтому лимит временно сужаем до 1.
+    await db.query(
+      "update public.plan_limits set contact_disclosures_per_day = 1 where plan = 'free'",
+    );
+
+    try {
+      const first = await as('institution').rpc('reveal_expert_contacts', {
+        target_expert_id: EXPERT_PUBLIC,
+      });
+      expect(first.error).toBeNull();
+
+      const repeat = await as('institution').rpc('reveal_expert_contacts', {
+        target_expert_id: EXPERT_PUBLIC,
+      });
+      expect(repeat.error).toBeNull();
+
+      // Черновик сам по себе не раскрывается; на время проверки квоты публикуем его.
+      await db.query(
+        `update public.experts
+         set published_at = now(), profile_visibility = 'public'
+         where id = $1`,
+        [EXPERT_DRAFT],
+      );
+      const overQuota = await as('institution').rpc('reveal_expert_contacts', {
+        target_expert_id: EXPERT_DRAFT,
+      });
+      expect(overQuota.error?.code).toBe('AF001');
+    } finally {
+      await db.query(
+        "update public.plan_limits set contact_disclosures_per_day = 5 where plan = 'free'",
+      );
+      await db.query(
+        `update public.experts
+         set published_at = null, profile_visibility = 'public'
+         where id = $1`,
+        [EXPERT_DRAFT],
+      );
+      await db.query('delete from public.contact_disclosures where institution_id = $1', [
+        INSTITUTION_VERIFIED,
+      ]);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('правка профиля эксперта', () => {
+  it('владелец правит свой профиль', async () => {
+    const bio = `Обновлено в тесте ${Date.now()}`;
+
+    const { data, error } = await as('expert')
+      .from('experts')
+      .update({ bio })
+      .eq('id', EXPERT_PUBLIC)
+      .select('id, bio');
+
+    expect(error).toBeNull();
+    expect(data).toEqual([{ id: EXPERT_PUBLIC, bio }]);
+  });
+
+  const cannotEdit: [string, ActorName][] = [
+    ['посторонний эксперт', 'hiddenExpert'],
+    ['представитель институции', 'institution'],
+    // Правки администратора по матрице требуют записи в журнал, то есть отдельной
+    // функции. Пока её нет, прямая запись закрыта — отказ по умолчанию (§8.2).
+    ['администратор', 'admin'],
+  ];
+
+  it.each(cannotEdit)('чужой профиль не правит: %s', async (_name, actor) => {
+    const { data } = await as(actor)
+      .from('experts')
+      .update({ bio: 'взлом' })
+      .eq('id', EXPERT_PUBLIC)
+      .select('id');
+
+    expect(data).toEqual([]);
+  });
+
+  it('гость не правит ничего', async () => {
+    const { data, error } = await guest()
+      .from('experts')
+      .update({ bio: 'взлом' })
+      .eq('id', EXPERT_PUBLIC)
+      .select('id');
+
+    // Без сессии PostgREST отвечает ошибкой и data=null, а не пустым массивом.
+    expect(error).not.toBeNull();
+    expect(data ?? []).toEqual([]);
+  });
+
+  it('заблокированный пользователь не правит свой профиль', async () => {
+    const { data } = await as('suspended')
+      .from('experts')
+      .update({ bio: 'взлом' })
+      .eq('id', EXPERT_PUBLIC)
+      .select('id');
+
+    expect(data).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('учётные записи', () => {
+  it('гость не видит ни одной', async () => {
+    const { data } = await guest().from('users').select('id');
+    expect(data).toEqual([]);
+  });
+
+  it('пользователь видит только свою', async () => {
+    const { data } = await as('expert').from('users').select('id');
+    expect(data).toEqual([{ id: USER_EXPERT }]);
+  });
+
+  it('администратор видит все', async () => {
+    const { data } = await as('admin').from('users').select('id');
+    expect(data?.length).toBeGreaterThan(1);
+  });
+
+  it('пользователь меняет свой язык интерфейса', async () => {
+    const { error } = await as('expert')
+      .from('users')
+      .update({ locale: 'en' })
+      .eq('id', USER_EXPERT);
+
+    expect(error).toBeNull();
+  });
+
+  // Повышение прав через прямую запись роли — первое, что попробует злоумышленник.
+  it('пользователь не может выдать себе роль администратора', async () => {
+    const { error } = await as('expert')
+      .from('users')
+      .update({ role: 'admin' })
+      .eq('id', USER_EXPERT);
+
+    expect(error).not.toBeNull();
+
+    const { rows } = await db.query('select role::text from public.users where id = $1', [
+      USER_EXPERT,
+    ]);
+    expect(rows[0]).toEqual({ role: 'expert' });
+  });
+
+  it('пользователь не может снять с себя блокировку', async () => {
+    const { error } = await as('suspended')
+      .from('users')
+      .update({ status: 'active' })
+      .eq('id', USER_EXPERT);
+
+    expect(error).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('институции', () => {
+  it('гость видит институцию, но без контактов', async () => {
+    const { data, error } = await guest()
+      .from('institutions')
+      .select('id, name, verified_at')
+      .eq('id', INSTITUTION_VERIFIED);
+
+    expect(error).toBeNull();
+    expect(data?.[0]?.name).toBe('University of Rwanda');
+  });
+
+  it('владелец правит свою институцию', async () => {
+    const { error } = await as('institution')
+      .from('institutions')
+      .update({ website: 'https://ur.ac.rw' })
+      .eq('id', INSTITUTION_VERIFIED);
+
+    expect(error).toBeNull();
+  });
+
+  it('чужую институцию не правит никто', async () => {
+    const { data } = await as('unverifiedInstitution')
+      .from('institutions')
+      .update({ name: 'Захвачено' })
+      .eq('id', INSTITUTION_VERIFIED)
+      .select('id');
+
+    expect(data).toEqual([]);
+  });
+
+  // Верификация — решение платформы, а не самой организации.
+  it('институция не может верифицировать себя сама', async () => {
+    const { error } = await as('unverifiedInstitution')
+      .from('institutions')
+      .update({ verified_at: new Date().toISOString() })
+      .eq('id', INSTITUTION_UNVERIFIED);
+
+    expect(error).not.toBeNull();
+
+    const { rows } = await db.query('select verified_at from public.institutions where id = $1', [
+      INSTITUTION_UNVERIFIED,
+    ]);
+    expect(rows[0]).toEqual({ verified_at: null });
+  });
+
+  it('институция не может повысить себе тариф', async () => {
+    const { error } = await as('institution')
+      .from('institutions')
+      .update({ plan: 'premium' })
+      .eq('id', INSTITUTION_VERIFIED);
+
+    expect(error).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('состав институции', () => {
+  it('участник видит своё членство', async () => {
+    const { data } = await as('institution').from('institution_members').select('institution_id');
+
+    expect(data).toEqual([{ institution_id: INSTITUTION_VERIFIED }]);
+  });
+
+  it('участник чужой институции его не видит', async () => {
+    const { data } = await as('unverifiedInstitution')
+      .from('institution_members')
+      .select('institution_id')
+      .eq('institution_id', INSTITUTION_VERIFIED);
+
+    expect(data).toEqual([]);
+  });
+
+  it('гость не видит состав', async () => {
+    const { data } = await guest().from('institution_members').select('institution_id');
+    expect(data).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('журнал действий', () => {
+  const noAccess: [string, () => SupabaseClient][] = [
+    ['гость', guest],
+    ['эксперт', () => as('expert')],
+    ['представитель институции', () => as('institution')],
+  ];
+
+  it.each(noAccess)('журнал закрыт: %s', async (_name, client) => {
+    const { data } = await client().from('audit_log').select('id');
+    expect(data).toEqual([]);
+  });
+
+  it('администратор читает журнал', async () => {
+    await as('admin').rpc('reveal_expert_contacts', { target_expert_id: EXPERT_PUBLIC });
+
+    const { data, error } = await as('admin').from('audit_log').select('action');
+
+    expect(error).toBeNull();
+    expect(data?.length).toBeGreaterThan(0);
+  });
+
+  it('запись в журнал напрямую невозможна', async () => {
+    const { error } = await as('admin')
+      .from('audit_log')
+      .insert({ action: 'подделка', entity_type: 'expert' });
+
+    expect(error).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('справочники', () => {
+  it('гость читает страны: они нужны на форме регистрации', async () => {
+    const { data } = await guest().from('countries').select('iso2');
+    expect(data?.length).toBeGreaterThan(0);
+  });
+
+  it('гость не может дописать страну', async () => {
+    const { error } = await guest().from('countries').insert({ iso2: 'XX', name: 'Выдумка' });
+    expect(error).not.toBeNull();
+  });
+
+  it('эксперт не может дописать область экспертизы', async () => {
+    // Свободный ввод таксономии запрещён: иначе фасетный поиск развалится (§4.3).
+    const { error } = await as('expert').from('expertise').insert({ slug: 'ai', label: 'AI' });
+    expect(error).not.toBeNull();
+  });
+});
