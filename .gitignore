@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# typescript build artifacts
+*.tsbuildinfo
+
+# production
+build/
+dist/
+
+# testing
+coverage/
+
+# environment — секреты никогда не попадают в git
+.env
+.env.*
+!.env.example
+
+# supabase local
+supabase/.branches/
+supabase/.temp/
+
+# os / editor
+.DS_Store
+*.pem
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# logs
+*.log
+npm-debug.log*
+
+# temp
+.tmp-home/
+.venv/
+.render/

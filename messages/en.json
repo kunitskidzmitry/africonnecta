@@ -1,0 +1,13 @@
+{
+  "Meta": {
+    "title": "AfriConnecta — Connecting Minds. Advancing Africa.",
+    "description": "AfriConnecta connects institutions with academic experts from Africa and the diaspora for teaching, research and collaboration."
+  },
+  "Landing": {
+    "headline": "Find African Expertise. Build Knowledge. Transform Futures.",
+    "subheadline": "AfriConnecta connects institutions with academic experts from Africa and the diaspora for teaching, research and collaboration.",
+    "searchPlaceholder": "What are you looking for?",
+    "searchAction": "Search",
+    "status": "Foundation milestone (M0) — search is not implemented yet."
+  }
+}
