@@ -4,3 +4,4 @@ coverage/
 package-lock.json
 next-env.d.ts
 docs/source/
+src/lib/database.types.ts
