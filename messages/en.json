@@ -12,6 +12,25 @@
     "joinAsExpert": "Join as an expert",
     "joinAsInstitution": "Register your institution"
   },
+  "Header": {
+    "home": "AfriConnecta",
+    "search": "Find experts",
+    "signIn": "Sign in",
+    "register": "Create account",
+    "profile": "My profile",
+    "account": "Account",
+    "signOut": "Sign out"
+  },
+  "Login": {
+    "title": "Sign in",
+    "subtitle": "Use the email and password you registered with.",
+    "fieldEmail": "Email",
+    "fieldPassword": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "noAccount": "New here?",
+    "register": "Create an account"
+  },
   "Register": {
     "chooseTitle": "Create your account",
     "chooseSubtitle": "AfriConnecta has two sides. Pick the one that describes you.",
@@ -71,7 +90,11 @@
     "welcomeEmail": "Email",
     "roleExpert": "Academic expert",
     "roleInstitution": "Institution",
-    "signOut": "Sign out"
+    "roleAdmin": "Administrator",
+    "signOut": "Sign out",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "continueToProfile": "Continue to your profile"
   },
   "RegisterErrors": {
     "emailInvalid": "Enter a valid email address.",
@@ -90,6 +113,10 @@
     "bioTooLong": "Keep the biography under 2000 characters.",
     "weakPassword": "That password was rejected. Try a longer one.",
     "rateLimited": "Too many attempts. Wait a few minutes and try again.",
-    "unknown": "Something went wrong on our side. Please try again."
+    "unknown": "Something went wrong on our side. Please try again.",
+    "passwordRequired": "Enter your password.",
+    "invalidCredentials": "Email or password is incorrect.",
+    "unconfirmed": "Confirm your email before signing in. Check your inbox for the link.",
+    "suspended": "This account is not available."
   }
 }

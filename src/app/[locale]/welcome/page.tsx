@@ -1,51 +1,42 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { redirect } from '@/i18n/navigation';
+import { Link, redirect } from '@/i18n/navigation';
 import { signOut } from '@/lib/auth/actions';
-import { createClient } from '@/lib/supabase/server';
+import { getAppSession } from '@/lib/auth/session';
 
 /** Страница целиком зависит от текущей сессии — заранее её собирать нечего. */
 export const dynamic = 'force-dynamic';
 
 /**
- * Экран после подтверждения почты.
- *
- * Он же — доказательство, что цепочка сработала целиком: строка читается публичным
- * ключом через политику users_select_own, то есть пользователь видит собственный профиль
- * и только его. Если бы триггер не создал запись, здесь было бы пусто.
+ * Экран после подтверждения почты и запасной домашний экран
+ * для институции и администратора.
  */
 export default async function WelcomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
   const t = await getTranslations('Register');
-  const supabase = await createClient();
+  const session = await getAppSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect({ href: '/register', locale });
+  if (!session) {
+    redirect({ href: '/login', locale });
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role, status')
-    .eq('id', user.id)
-    .single();
-
   const roleLabel =
-    profile?.role === 'expert' ? t('roleExpert') : profile ? t('roleInstitution') : '—';
+    session.role === 'expert'
+      ? t('roleExpert')
+      : session.role === 'admin'
+        ? t('roleAdmin')
+        : t('roleInstitution');
 
   const rows = [
-    { label: t('welcomeEmail'), value: user.email ?? '—' },
+    { label: t('welcomeEmail'), value: session.email || '—' },
     { label: t('welcomeRole'), value: roleLabel },
-    { label: t('welcomeStatus'), value: profile?.status ?? '—' },
+    { label: t('welcomeStatus'), value: session.status },
   ];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-6 px-6 py-16">
+    <main className="mx-auto flex max-w-lg flex-col gap-6 px-6 py-16">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold tracking-tight">{t('welcomeTitle')}</h1>
         <p className="text-slate-600">{t('welcomeBody')}</p>
@@ -59,6 +50,15 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
           </div>
         ))}
       </dl>
+
+      {session.role === 'expert' && session.expertId ? (
+        <Link
+          href="/profile"
+          className="rounded-md bg-slate-900 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-slate-700"
+        >
+          {t('continueToProfile')}
+        </Link>
+      ) : null}
 
       <form action={signOut}>
         <input type="hidden" name="locale" value={locale} />

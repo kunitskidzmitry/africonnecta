@@ -3,7 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { useFormStatus } from 'react-dom';
 
-export function SubmitButton() {
+export function SubmitButton({
+  label,
+  pendingLabel,
+}: {
+  label?: string;
+  pendingLabel?: string;
+} = {}) {
   const t = useTranslations('Register');
   // useFormStatus читает состояние ближайшей формы выше по дереву, поэтому кнопка
   // обязана быть отдельным компонентом внутри <form>, а не частью самой формы.
@@ -15,7 +21,7 @@ export function SubmitButton() {
       disabled={pending}
       className="rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? t('submitting') : t('submit')}
+      {pending ? (pendingLabel ?? t('submitting')) : (label ?? t('submit'))}
     </button>
   );
 }

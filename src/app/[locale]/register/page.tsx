@@ -35,7 +35,7 @@ export default async function RegisterChoicePage({
   ] as const;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 px-6 py-16">
+    <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">{t('chooseTitle')}</h1>
         <p className="text-slate-600">{t('chooseSubtitle')}</p>
@@ -54,6 +54,13 @@ export default async function RegisterChoicePage({
           </Link>
         ))}
       </div>
+
+      <p className="text-sm text-slate-600">
+        {t('alreadyHaveAccount')}{' '}
+        <Link href="/login" className="font-semibold text-slate-900 underline">
+          {t('signIn')}
+        </Link>
+      </p>
     </main>
   );
 }

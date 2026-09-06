@@ -32,6 +32,13 @@ export default async function ExpertRegistrationPage({
 
       <ExpertForm countries={countries} />
 
+      <p className="text-sm text-slate-600">
+        {t('alreadyHaveAccount')}{' '}
+        <Link href="/login" className="font-semibold text-slate-900 underline">
+          {t('signIn')}
+        </Link>
+      </p>
+
       <Link href="/register" className="text-sm text-slate-500 underline hover:text-slate-900">
         {t('backToChoice')}
       </Link>
