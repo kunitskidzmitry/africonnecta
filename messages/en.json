@@ -31,6 +31,49 @@
     "noAccount": "New here?",
     "register": "Create an account"
   },
+  "Profile": {
+    "title": "Your expert profile",
+    "subtitle": "This is what institutions will see when the profile is published.",
+    "sectionAbout": "About you",
+    "sectionExpertise": "Areas of expertise",
+    "sectionLanguages": "Languages",
+    "sectionVisibility": "Visibility",
+    "fieldAcademicLevel": "Academic level",
+    "fieldLanguage": "Language",
+    "fieldProficiency": "Proficiency",
+    "fieldVisibility": "Who can see this profile",
+    "fieldPublished": "Publish this profile",
+    "publishedHint": "Unpublished profiles stay a draft. Only you can see them.",
+    "expertiseHint": "Choose the areas you work in. At least one is required to publish.",
+    "languagesHint": "At least one language is required to publish. Proficiency follows the CEFR scale.",
+    "selectPlaceholder": "Select…",
+    "addLanguage": "Add a language",
+    "removeLanguage": "Remove",
+    "levelUnset": "Not specified",
+    "level": {
+      "professor": "Professor",
+      "lecturer": "Lecturer",
+      "researcher": "Researcher",
+      "phd_candidate": "PhD candidate"
+    },
+    "visibility": {
+      "public": "Anyone",
+      "authenticated": "Signed-in users only",
+      "hidden": "Hidden — only you"
+    },
+    "proficiency": {
+      "a1": "A1 — beginner",
+      "a2": "A2 — elementary",
+      "b1": "B1 — intermediate",
+      "b2": "B2 — upper intermediate",
+      "c1": "C1 — advanced",
+      "c2": "C2 — proficient",
+      "native": "Native"
+    },
+    "submit": "Save profile",
+    "submitting": "Saving…",
+    "saved": "Profile saved."
+  },
   "Register": {
     "chooseTitle": "Create your account",
     "chooseSubtitle": "AfriConnecta has two sides. Pick the one that describes you.",
@@ -117,6 +160,13 @@
     "passwordRequired": "Enter your password.",
     "invalidCredentials": "Email or password is incorrect.",
     "unconfirmed": "Confirm your email before signing in. Check your inbox for the link.",
-    "suspended": "This account is not available."
+    "suspended": "This account is not available.",
+    "academicLevelInvalid": "Select a valid academic level.",
+    "visibilityInvalid": "Select who can see this profile.",
+    "expertiseRequired": "Choose at least one area of expertise to publish.",
+    "expertiseInvalid": "Choose expertise from the list.",
+    "languageRequired": "Add at least one language to publish.",
+    "languageInvalid": "Choose a language and a proficiency level.",
+    "languageDuplicate": "Each language can be added only once."
   }
 }
