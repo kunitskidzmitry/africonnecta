@@ -215,6 +215,7 @@ export type Database = {
           id: string
           last_name: string
           orcid_id: string | null
+          phone: string | null
           photo_file_id: string | null
           profile_visibility: Database["public"]["Enums"]["profile_visibility"]
           published_at: string | null
@@ -236,6 +237,7 @@ export type Database = {
           id?: string
           last_name: string
           orcid_id?: string | null
+          phone?: string | null
           photo_file_id?: string | null
           profile_visibility?: Database["public"]["Enums"]["profile_visibility"]
           published_at?: string | null
@@ -257,6 +259,7 @@ export type Database = {
           id?: string
           last_name?: string
           orcid_id?: string | null
+          phone?: string | null
           photo_file_id?: string | null
           profile_visibility?: Database["public"]["Enums"]["profile_visibility"]
           published_at?: string | null

@@ -13,5 +13,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/**/*.test.ts'],
+    // Интеграционные тесты требуют поднятого стека Supabase и вынесены в отдельный
+    // запуск (npm run test:integration). Обычный `npm run test` обязан работать
+    // без Docker и укладываться в секунды, иначе им перестают пользоваться.
+    exclude: ['node_modules/**', 'tests/integration/**'],
   },
 });

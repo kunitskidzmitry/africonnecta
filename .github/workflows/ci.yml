@@ -49,3 +49,32 @@ jobs:
             exit 1
           fi
           echo "Client bundle is clean"
+
+  # Отдельная работа: поднимает настоящий Supabase в Docker и прогоняет регистрацию
+  # целиком, вместе с письмом подтверждения. Стоит несколько минут, поэтому вынесена
+  # из быстрых проверок и идёт параллельно с ними.
+  #
+  # Смысл именно в живом стеке: триггеры базы, шаблон письма и настройки auth не
+  # покрываются никакими модульными тестами, а ломаются в первую очередь.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Supabase
+        run: npm run db:start
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+      - name: Stop Supabase
+        if: always()
+        run: npm run db:stop
