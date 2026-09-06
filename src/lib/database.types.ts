@@ -265,6 +265,7 @@ export type Database = {
           photo_file_id: string | null
           profile_visibility: Database["public"]["Enums"]["profile_visibility"]
           published_at: string | null
+          search_document: unknown
           title: string | null
           updated_at: string
           user_id: string
@@ -287,6 +288,7 @@ export type Database = {
           photo_file_id?: string | null
           profile_visibility?: Database["public"]["Enums"]["profile_visibility"]
           published_at?: string | null
+          search_document?: unknown
           title?: string | null
           updated_at?: string
           user_id: string
@@ -309,6 +311,7 @@ export type Database = {
           photo_file_id?: string | null
           profile_visibility?: Database["public"]["Enums"]["profile_visibility"]
           published_at?: string | null
+          search_document?: unknown
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -570,6 +573,15 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      expert_expertise_ids: {
+        Args: { target_expert_id: string }
+        Returns: number[]
+      }
+      expert_language_ids: {
+        Args: { target_expert_id: string }
+        Returns: number[]
+      }
+      expertise_broaden: { Args: { ids: number[] }; Returns: number[] }
       is_admin: { Args: never; Returns: boolean }
       is_member_of: {
         Args: { target_institution_id: string }
@@ -605,6 +617,36 @@ export type Database = {
           phone: string
         }[]
       }
+      search_experts: {
+        Args: {
+          after_id?: string
+          after_published_at?: string
+          after_rank?: number
+          filter_country_ids?: number[]
+          filter_expertise_ids?: number[]
+          filter_language_ids?: number[]
+          filter_levels?: Database["public"]["Enums"]["academic_level"][]
+          page_size?: number
+          q?: string
+        }
+        Returns: Database["public"]["CompositeTypes"]["expert_search_row"][]
+        SetofOptions: {
+          from: "*"
+          to: "expert_search_row"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      search_experts_similar: {
+        Args: { page_size?: number; q?: string }
+        Returns: Database["public"]["CompositeTypes"]["expert_search_row"][]
+        SetofOptions: {
+          from: "*"
+          to: "expert_search_row"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
@@ -625,7 +667,22 @@ export type Database = {
       user_status: "pending" | "active" | "suspended"
     }
     CompositeTypes: {
-      [_ in never]: never
+      expert_search_row: {
+        id: string | null
+        first_name: string | null
+        last_name: string | null
+        title: string | null
+        academic_level: Database["public"]["Enums"]["academic_level"] | null
+        highest_degree: string | null
+        current_institution_name: string | null
+        country_id: number | null
+        bio_excerpt: string | null
+        photo_file_id: string | null
+        expertise_ids: number[] | null
+        language_ids: number[] | null
+        rank: number | null
+        published_at: string | null
+      }
     }
   }
 }

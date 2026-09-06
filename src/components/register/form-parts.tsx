@@ -49,4 +49,4 @@ export function SectionHeading({ children }: { children: string }) {
   );
 }
 
-export type Country = { iso2: string; name: string };
+export type Country = { id: number; iso2: string; name: string };

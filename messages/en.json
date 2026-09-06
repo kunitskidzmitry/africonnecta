@@ -8,9 +8,29 @@
     "subheadline": "AfriConnecta connects institutions with academic experts from Africa and the diaspora for teaching, research and collaboration.",
     "searchPlaceholder": "What are you looking for?",
     "searchAction": "Search",
-    "status": "Foundation milestone — search is not implemented yet.",
     "joinAsExpert": "Join as an expert",
-    "joinAsInstitution": "Register your institution"
+    "joinAsInstitution": "Register your institution",
+    "signIn": "Sign in"
+  },
+  "Search": {
+    "title": "Find an expert",
+    "subtitle": "Search by topic, institution or name. Narrow the results with the filters.",
+    "fieldTerm": "Search",
+    "termPlaceholder": "Topic, institution or name",
+    "fieldCountry": "Country",
+    "anyCountry": "Any country",
+    "fieldLevel": "Academic level",
+    "fieldLanguage": "Languages",
+    "fieldExpertise": "Areas of expertise",
+    "submit": "Search",
+    "speaks": "Speaks",
+    "nextPage": "Next page",
+    "backToFirstPage": "Back to the first page",
+    "empty": "No experts match this search yet. Try fewer filters or a broader topic.",
+    "emptyTail": "There are no more results on this page.",
+    "broadenedNotice": "No exact matches, so this is a broadened search across the wider field.",
+    "broadenedTo": "Also included",
+    "similarNotice": "No exact matches for “{term}”. These names and institutions are spelled similarly."
   },
   "Header": {
     "home": "AfriConnecta",

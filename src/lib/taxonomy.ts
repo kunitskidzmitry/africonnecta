@@ -16,7 +16,9 @@ export type { ExpertiseOption, LanguageOption };
 export async function getCountries(): Promise<Country[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.from('countries').select('iso2, name').order('name');
+  // id читается вместе с кодом: форма регистрации отправляет iso2, а выдача поиска
+  // приходит с country_id — подписать страну в карточке больше нечем.
+  const { data, error } = await supabase.from('countries').select('id, iso2, name').order('name');
 
   if (error) {
     throw new Error(`Не удалось загрузить справочник стран: ${error.message}`);
