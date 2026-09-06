@@ -25,6 +25,9 @@ coverage/
 supabase/.branches/
 supabase/.temp/
 
+# локальные дампы — не коммитить. Процедура: npm run db:drill
+backups/
+
 # os / editor
 .DS_Store
 *.pem

@@ -71,6 +71,8 @@ npm run test:integration
 | `npm run db:stop`  | Остановить                                                      |
 | `npm run db:reset` | Пересоздать базу и накатить все миграции с нуля                 |
 | `npm run db:types` | Перегенерировать `src/lib/database.types.ts` из схемы           |
+| `npm run db:dump`  | Снять дамп схемы `public` в `backups/public.dump`               |
+| `npm run db:drill` | **Учебное восстановление:** дамп → уничтожение данных → restore |
 
 Источник истины о схеме — SQL-миграции в `supabase/migrations/` (см. ADR-0003).
 
@@ -85,11 +87,15 @@ npm run test:integration
 `npm run db:reset` применяет `supabase/seed.sql` — тестовые данные **только для локальной
 разработки**. Справочники в сид не входят: они нужны и в проде, поэтому лежат в миграции.
 
-| Почта                      | Роль               | Пароль        |
-| -------------------------- | ------------------ | ------------- |
-| `expert@example.test`      | expert             | `password123` |
-| `institution@example.test` | institution_member | `password123` |
-| `admin@example.test`       | admin              | `password123` |
+| Почта                        | Роль                          | Пароль        |
+| ---------------------------- | ----------------------------- | ------------- |
+| `expert@example.test`        | expert                        | `password123` |
+| `expert.hidden@example.test` | expert (скрытый)              | `password123` |
+| `expert.draft@example.test`  | expert (черновик)             | `password123` |
+| `institution@example.test`   | institution_member            | `password123` |
+| `unverified@example.test`    | institution (без верификации) | `password123` |
+| `admin@example.test`         | admin                         | `password123` |
+| `suspended@example.test`     | expert (заблокирован)         | `password123` |
 
 Идентификаторы в сиде фиксированные — на них будут ссылаться тесты матрицы авторизации.
 Домен `.test` зарезервирован стандартом, письма наружу не уйдут.

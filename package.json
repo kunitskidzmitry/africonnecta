@@ -21,6 +21,8 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/database.types.ts",
+    "db:dump": "mkdir -p backups && docker exec \"${SUPABASE_DB_CONTAINER:-supabase_db_AfriConnecta}\" pg_dump -U postgres -d postgres --format=custom --no-owner --data-only --table=public.users --table=public.institutions --table=public.institution_members --table=public.files --table=public.experts --table=public.expert_expertise --table=public.expert_languages --table=public.audit_log --table=public.contact_disclosures --file=/tmp/public.dump && docker cp \"${SUPABASE_DB_CONTAINER:-supabase_db_AfriConnecta}:/tmp/public.dump\" backups/public.dump",
+    "db:drill": "bash scripts/backup-restore-drill.sh",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test"
   },
   "dependencies": {
