@@ -1,6 +1,8 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { Client } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { anon, DATABASE_URL, SEED_PASSWORD } from './local-stack';
 
 /**
  * Матрица доступа (WP4). Соответствует §8.1 docs/implementation-prompt.md.
@@ -17,13 +19,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
  * Запуск: `npm run db:reset && npm run test:integration`.
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
-const DATABASE_URL =
-  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
-const ANON_KEY =
-  process.env.SUPABASE_ANON_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-
 /** Идентификаторы из сида. */
 const EXPERT_PUBLIC = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 const EXPERT_HIDDEN = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
@@ -31,8 +26,7 @@ const EXPERT_DRAFT = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
 const INSTITUTION_VERIFIED = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const INSTITUTION_UNVERIFIED = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
 const USER_EXPERT = '11111111-1111-1111-1111-111111111111';
-
-const PASSWORD = 'password123';
+const USER_INSTITUTION = '22222222-2222-2222-2222-222222222222';
 
 const ACTORS = {
   expert: 'expert@example.test',
@@ -50,11 +44,7 @@ const clients = new Map<ActorName, SupabaseClient>();
 const db = new Client({ connectionString: DATABASE_URL });
 
 /** Клиент без сессии — так систему видит случайный посетитель. */
-function guest(): SupabaseClient {
-  return createClient(SUPABASE_URL, ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+const guest = anon;
 
 function as(actor: ActorName): SupabaseClient {
   const client = clients.get(actor);
@@ -67,7 +57,7 @@ beforeAll(async () => {
 
   for (const [name, email] of Object.entries(ACTORS) as [ActorName, string][]) {
     const client = guest();
-    const { error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
+    const { error } = await client.auth.signInWithPassword({ email, password: SEED_PASSWORD });
 
     if (error) throw new Error(`Не удалось войти как ${name} (${email}): ${error.message}`);
 
@@ -299,6 +289,95 @@ describe('контакты эксперта: раскрытие через фу�
       await db.query('delete from public.contact_disclosures where institution_id = $1', [
         INSTITUTION_VERIFIED,
       ]);
+    }
+  });
+
+  /**
+   * Квота не обходится параллельными запросами.
+   *
+   * Проверка квоты — это чтение счётчика, сравнение с лимитом и вставка тремя отдельными
+   * действиями. На уровне READ COMMITTED вторая транзакция не видит незафиксированную
+   * вставку первой, поэтому без блокировки обе читают одно и то же «израсходовано 0»
+   * и обе проходят. Скрипт с N одновременными запросами получал примерно N-кратную
+   * квоту, а квота — единственное, что ограничивает скорость съёма базы (§7).
+   *
+   * Права при этом не нарушаются: институция верифицирована, профили опубликованы.
+   * Поэтому дыру не видно ни в одной проверке матрицы доступа — только здесь.
+   *
+   * Две отдельные транзакции, а не Promise.all по RPC: параллельность нужна
+   * гарантированная. Здесь моменты фиксации задаёт тест, и результат не зависит
+   * от того, как PostgREST разложил запросы по соединениям.
+   */
+  it('квота не обходится одновременными запросами', async () => {
+    const claims = `{"sub":"${USER_INSTITUTION}","role":"authenticated"}`;
+    const first = new Client({ connectionString: DATABASE_URL });
+    const second = new Client({ connectionString: DATABASE_URL });
+
+    await Promise.all([first.connect(), second.connect()]);
+
+    await db.query('delete from public.contact_disclosures where institution_id = $1', [
+      INSTITUTION_VERIFIED,
+    ]);
+    await db.query(
+      "update public.plan_limits set contact_disclosures_per_day = 1 where plan = 'free'",
+    );
+    await db.query(
+      `update public.experts
+         set published_at = now(), profile_visibility = 'public'
+       where id = $1`,
+      [EXPERT_DRAFT],
+    );
+
+    try {
+      for (const client of [first, second]) {
+        await client.query('begin');
+        await client.query(`set local request.jwt.claims = '${claims}'`);
+      }
+
+      const firstReveal = await first.query('select * from public.reveal_expert_contacts($1)', [
+        EXPERT_PUBLIC,
+      ]);
+
+      expect(firstReveal.rows).toHaveLength(1);
+
+      // Вторая транзакция входит, пока первая держит незафиксированную вставку.
+      const secondReveal = second.query('select * from public.reveal_expert_contacts($1)', [
+        EXPERT_DRAFT,
+      ]);
+      let secondFinished = false;
+      void secondReveal.then(
+        () => (secondFinished = true),
+        () => (secondFinished = true),
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Ждёт блокировку, а не отвечает: без неё она уже успела бы выдать контакты.
+      expect(secondFinished, 'вторая транзакция прошла, не дождавшись первой').toBe(false);
+
+      await first.query('commit');
+
+      await expect(secondReveal).rejects.toMatchObject({ code: 'AF001' });
+
+      const { rows } = await db.query(
+        'select count(*)::int as used from public.contact_disclosures where institution_id = $1',
+        [INSTITUTION_VERIFIED],
+      );
+
+      expect(rows[0].used).toBe(1);
+    } finally {
+      await second.query('rollback').catch(() => {});
+      await first.query('rollback').catch(() => {});
+      await Promise.all([first.end(), second.end()]);
+
+      await db.query(
+        "update public.plan_limits set contact_disclosures_per_day = 5 where plan = 'free'",
+      );
+      await db.query('update public.experts set published_at = null where id = $1', [EXPERT_DRAFT]);
+      await db.query('delete from public.contact_disclosures where institution_id = $1', [
+        INSTITUTION_VERIFIED,
+      ]);
+      await db.query("delete from public.audit_log where action = 'expert.contacts.reveal'");
     }
   });
 });

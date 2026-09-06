@@ -1,6 +1,7 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Client } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { anon, DATABASE_URL, MAILPIT_URL } from './local-stack';
 
 /**
  * Сквозная проверка регистрации (WP3) против локального стека Supabase.
@@ -21,14 +22,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
  * демонстрационными параметрами, одинаковыми на любой машине.
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
-const MAILPIT_URL = process.env.MAILPIT_URL ?? 'http://127.0.0.1:54324';
-const DATABASE_URL =
-  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
-const ANON_KEY =
-  process.env.SUPABASE_ANON_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-
 const REDIRECT_TO = 'http://localhost:3100/api/auth/confirm?next=%2Fen%2Fwelcome';
 
 // Домен .test зарезервирован RFC 2606: письма гарантированно никуда не уйдут.
@@ -39,13 +32,6 @@ const institutionEmail = `institution.${stamp}@example.test`;
 const password = 'a-sufficiently-long-passphrase';
 
 const db = new Client({ connectionString: DATABASE_URL });
-
-/** Ведёт себя как браузер обычного посетителя: публичный ключ, ничего сверх. */
-function anon(): SupabaseClient {
-  return createClient(SUPABASE_URL, ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
   const result = await db.query(sql, params);
