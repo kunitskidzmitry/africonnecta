@@ -14,6 +14,7 @@ export type SearchResultRow = {
   institution: string;
   countryId: number | null;
   bioExcerpt: string;
+  photoFileId: string | null;
   expertiseIds: number[];
   languageIds: number[];
   rank: number;
@@ -59,6 +60,7 @@ function toRow(row: Row): SearchResultRow | null {
     institution: row.current_institution_name ?? '',
     countryId: row.country_id ?? null,
     bioExcerpt: row.bio_excerpt ?? '',
+    photoFileId: row.photo_file_id ?? null,
     expertiseIds: row.expertise_ids ?? [],
     languageIds: row.language_ids ?? [],
     rank: row.rank ?? 0,

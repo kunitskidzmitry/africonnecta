@@ -33,18 +33,38 @@ export async function ExpertCard({ row, countryNames, expertiseLabels, languageN
 
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-slate-200 p-5">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-lg font-semibold text-slate-900">
-          {row.firstName} {row.lastName}
-        </h3>
+      {/* Фотография приходит через /api/files/[id]: право проверяет политика, а адрес
+          объекта в разметке не появляется — подпись живёт минуты и зависит от того,
+          кто смотрит. По той же причине не next/image: за редиректом на чужой домен
+          оптимизировать нечего.
 
-        <p className="text-sm text-slate-600">
-          {[row.title, row.academicLevel ? tProfile(`level.${row.academicLevel}`) : null]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
+          alt пустой намеренно. Имя стоит рядом заголовком, и «фотография такого-то»
+          читалось бы экранным диктором дважды; для оформительной картинки правильный
+          alt — пустой. */}
+      <div className="flex items-start gap-4">
+        {row.photoFileId ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`/api/files/${row.photoFileId}`}
+            alt=""
+            loading="lazy"
+            className="size-14 shrink-0 rounded-full object-cover"
+          />
+        ) : null}
 
-        {affiliation ? <p className="text-sm text-slate-500">{affiliation}</p> : null}
+        <div className="flex flex-col gap-1">
+          <h3 className="text-lg font-semibold text-slate-900">
+            {row.firstName} {row.lastName}
+          </h3>
+
+          <p className="text-sm text-slate-600">
+            {[row.title, row.academicLevel ? tProfile(`level.${row.academicLevel}`) : null]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+
+          {affiliation ? <p className="text-sm text-slate-500">{affiliation}</p> : null}
+        </div>
       </div>
 
       {row.bioExcerpt ? <p className="text-sm text-slate-700">{row.bioExcerpt}</p> : null}

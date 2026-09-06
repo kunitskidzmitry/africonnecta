@@ -22,6 +22,8 @@ export type LoadedExpertProfile = {
   biography: string;
   visibility: Visibility;
   published: boolean;
+  photoFileId: string | null;
+  cvFileId: string | null;
   expertiseIds: number[];
   languages: LoadedLanguage[];
 };
@@ -71,6 +73,10 @@ export async function loadOwnExpertProfile(): Promise<LoadedExpertProfile | null
     biography: expert.bio ?? '',
     visibility: expert.profile_visibility,
     published: expert.published_at !== null,
+    // Оба идентификатора приходят из my_expert_profile: обычным select их не взять,
+    // cv_file_id закрыт грантом наравне с телефоном (§8).
+    photoFileId: expert.photo_file_id,
+    cvFileId: expert.cv_file_id,
     expertiseIds: (expertiseRows ?? []).map((row) => row.expertise_id),
     languages: (languageRows ?? []).map((row) => ({
       languageId: row.language_id,

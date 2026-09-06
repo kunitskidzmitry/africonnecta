@@ -358,6 +358,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          kind: Database["public"]["Enums"]["file_kind"]
           mime_type: string
           owner_user_id: string
           scan_status: Database["public"]["Enums"]["file_scan_status"]
@@ -367,6 +368,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          kind: Database["public"]["Enums"]["file_kind"]
           mime_type: string
           owner_user_id: string
           scan_status?: Database["public"]["Enums"]["file_scan_status"]
@@ -376,6 +378,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          kind?: Database["public"]["Enums"]["file_kind"]
           mime_type?: string
           owner_user_id?: string
           scan_status?: Database["public"]["Enums"]["file_scan_status"]
@@ -652,6 +655,7 @@ export type Database = {
     }
     Enums: {
       academic_level: "professor" | "lecturer" | "researcher" | "phd_candidate"
+      file_kind: "photo" | "cv"
       file_scan_status: "pending" | "clean" | "infected" | "failed"
       institution_type:
         | "university"
@@ -811,6 +815,7 @@ export const Constants = {
   public: {
     Enums: {
       academic_level: ["professor", "lecturer", "researcher", "phd_candidate"],
+      file_kind: ["photo", "cv"],
       file_scan_status: ["pending", "clean", "infected", "failed"],
       institution_type: [
         "university",

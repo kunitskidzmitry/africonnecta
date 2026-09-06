@@ -1,15 +1,23 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { ProfileFileFields } from '@/components/profile/file-fields';
 import { ExpertProfileForm } from '@/components/profile/expert-profile-form';
 import { redirect } from '@/i18n/navigation';
 import { getAppSession } from '@/lib/auth/session';
+import { parseFileFailure, parseFileKind } from '@/lib/files/feedback';
 import { loadOwnExpertProfile } from '@/lib/profile/load';
 import { getCountries, getExpertiseOptions, getLanguages } from '@/lib/taxonomy';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProfilePage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+export default async function ProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   setRequestLocale(locale);
 
   const session = await getAppSession();
@@ -40,6 +48,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
         <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-slate-600">{t('subtitle')}</p>
       </div>
+
+      {/* Файлы отдельной секцией и раньше формы: у них своя отправка и свой ответ
+          (обработчик маршрута возвращает результат в адресе, см. api/files/upload). */}
+      <ProfileFileFields
+        locale={locale}
+        photoFileId={profile.photoFileId}
+        cvFileId={profile.cvFileId}
+        saved={parseFileKind(query.file)}
+        errorKey={parseFileFailure(query.fileError)}
+        errorKind={parseFileKind(query.fileKind)}
+      />
 
       <ExpertProfileForm
         profile={profile}
