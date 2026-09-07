@@ -47,3 +47,8 @@ npm-debug.log*
 # Исходные PDF намеренно не в репозитории: 63 МБ навсегда осели бы в истории.
 # ВАЖНО: значит, у них нет резервной копии в git. Храните их отдельно.
 docs/source/
+
+# Vercel CLI link + local env copies (secrets stay out of git)
+.vercel/
+.env.local
+.env*.local
