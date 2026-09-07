@@ -28,13 +28,13 @@ function Checkbox({
   checked: boolean;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-700">
+    <label className="flex min-h-10 items-center gap-2 text-sm text-slate-700">
       <input
         type="checkbox"
         name={name}
         value={value}
         defaultChecked={checked}
-        className="size-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+        className="size-4 shrink-0 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
       />
       {label}
     </label>
@@ -64,24 +64,24 @@ export async function SearchForm({ locale, query, countries, languages, expertis
     <form
       method="get"
       action={getPathname({ href: '/search', locale })}
-      className="flex flex-col gap-5 rounded-lg border border-slate-200 bg-slate-50 p-5"
+      className="flex flex-col gap-5 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5"
     >
       <div className="flex flex-col gap-1.5">
         <label htmlFor="q" className="text-sm font-medium text-slate-700">
           {t('fieldTerm')}
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             id="q"
             name={SEARCH_PARAMS.term}
             type="search"
             defaultValue={query.term}
             placeholder={t('termPlaceholder')}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+            className="w-full rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 sm:py-2 sm:text-sm"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            className="w-full shrink-0 rounded-md bg-slate-900 px-4 py-3 text-base font-semibold text-white hover:bg-slate-700 sm:w-auto sm:py-2 sm:text-sm"
           >
             {t('submit')}
           </button>
@@ -97,7 +97,7 @@ export async function SearchForm({ locale, query, countries, languages, expertis
             id="country"
             name={SEARCH_PARAMS.country}
             defaultValue={query.countryCodes[0] ?? ''}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+            className="w-full rounded-md border border-slate-300 px-3 py-3 text-base outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 sm:py-2 sm:text-sm"
           >
             <option value="">{t('anyCountry')}</option>
             {countries.map((country) => (

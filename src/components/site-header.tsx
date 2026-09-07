@@ -11,43 +11,58 @@ export async function SiteHeader() {
   const active = session?.status === 'active' ? session : null;
 
   return (
-    <header className="border-b border-slate-200">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:h-14 sm:px-6 sm:py-0">
         <Link href="/" className="font-semibold tracking-tight">
           {t('home')}
         </Link>
 
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/search" className="text-slate-600 hover:text-slate-900">
+        <nav className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm sm:gap-x-4">
+          <Link
+            href="/search"
+            className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
+          >
             {t('search')}
           </Link>
 
           {active ? (
             <>
               {active.role === 'expert' && active.expertId ? (
-                <Link href="/profile" className="font-medium text-slate-900 hover:underline">
+                <Link
+                  href="/profile"
+                  className="inline-flex min-h-10 items-center font-medium text-slate-900 hover:underline"
+                >
                   {t('profile')}
                 </Link>
               ) : (
-                <Link href="/welcome" className="font-medium text-slate-900 hover:underline">
+                <Link
+                  href="/welcome"
+                  className="inline-flex min-h-10 items-center font-medium text-slate-900 hover:underline"
+                >
                   {t('account')}
                 </Link>
               )}
               <form action={signOut}>
                 <input type="hidden" name="locale" value={locale} />
-                <button type="submit" className="text-slate-500 underline hover:text-slate-900">
+                <button
+                  type="submit"
+                  className="inline-flex min-h-10 items-center text-slate-500 underline hover:text-slate-900"
+                >
                   {t('signOut')}
                 </button>
               </form>
             </>
           ) : (
             <>
-              <Link href="/login" className="text-slate-600 hover:text-slate-900">
+              <Link
+                href="/login"
+                className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
+              >
                 {t('signIn')}
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-slate-900 px-3 py-1.5 font-semibold text-white hover:bg-slate-700"
+                className="inline-flex min-h-10 items-center rounded-md bg-slate-900 px-3 py-1.5 font-semibold text-white hover:bg-slate-700"
               >
                 {t('register')}
               </Link>

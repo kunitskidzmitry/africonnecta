@@ -32,7 +32,7 @@ export async function ExpertCard({ row, countryNames, expertiseLabels, languageN
   const affiliation = [row.institution, country].filter(Boolean).join(', ');
 
   return (
-    <article className="flex flex-col gap-3 rounded-lg border border-slate-200 p-5">
+    <article className="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 sm:p-5">
       {/* Фотография приходит через /api/files/[id]: право проверяет политика, а адрес
           объекта в разметке не появляется — подпись живёт минуты и зависит от того,
           кто смотрит. По той же причине не next/image: за редиректом на чужой домен

@@ -90,9 +90,9 @@ export default async function SearchPage({
     .filter((label): label is string => label !== undefined);
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-12">
+    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-12">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('title')}</h1>
         <p className="text-slate-600">{t('subtitle')}</p>
       </div>
 
@@ -150,7 +150,7 @@ export default async function SearchPage({
         <Link
           href={searchHref(answered, result.next)}
           rel="next"
-          className="self-start rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 sm:w-auto"
         >
           {t('nextPage')}
         </Link>

@@ -116,7 +116,7 @@ async function FileRow({
           method="post"
           action={`/api/files/upload?kind=${kind}&locale=${locale}`}
           encType="multipart/form-data"
-          className="flex flex-wrap items-center gap-3"
+          className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center"
         >
           <label htmlFor={`file-${kind}`} className="sr-only">
             {kind === 'photo' ? t('fieldPhoto') : t('fieldCv')}
@@ -127,11 +127,11 @@ async function FileRow({
             name="file"
             accept={accept}
             required
-            className="text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-800"
+            className="max-w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2.5 file:text-sm file:font-semibold file:text-slate-800"
           />
           <button
             type="submit"
-            className="rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            className="min-h-11 w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 sm:w-auto"
           >
             {fileId ? t('fileReplace') : t('fileUpload')}
           </button>

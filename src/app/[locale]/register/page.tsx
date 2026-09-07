@@ -35,9 +35,9 @@ export default async function RegisterChoicePage({
   ] as const;
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
+    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10 sm:gap-8 sm:px-6 sm:py-16">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">{t('chooseTitle')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('chooseTitle')}</h1>
         <p className="text-slate-600">{t('chooseSubtitle')}</p>
       </div>
 

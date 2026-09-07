@@ -17,7 +17,7 @@ export default async function CheckEmailPage({ params }: { params: Promise<{ loc
   const t = await getTranslations('Register');
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-4 px-6 py-16">
+    <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center gap-4 px-4 py-10 sm:px-6 sm:py-16">
       <h1 className="text-2xl font-bold tracking-tight">{t('checkEmailTitle')}</h1>
       <p className="leading-relaxed text-slate-600">{t('checkEmailBody')}</p>
       <p className="rounded-md bg-slate-100 px-4 py-3 text-sm text-slate-500">

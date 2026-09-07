@@ -3,3 +3,13 @@
 :root {
   color-scheme: light;
 }
+
+html {
+  /* Без этого iOS сам «увеличивает» страницу при фокусе в поля < 16px. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}

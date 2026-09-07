@@ -36,7 +36,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   ];
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-6 px-6 py-16">
+    <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10 sm:px-6 sm:py-16">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold tracking-tight">{t('welcomeTitle')}</h1>
         <p className="text-slate-600">{t('welcomeBody')}</p>
@@ -44,9 +44,12 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
 
       <dl className="divide-y divide-slate-200 rounded-lg border border-slate-200">
         {rows.map((row) => (
-          <div key={row.label} className="flex justify-between gap-4 px-4 py-3 text-sm">
+          <div
+            key={row.label}
+            className="flex flex-col gap-1 px-4 py-3 text-sm sm:flex-row sm:justify-between sm:gap-4"
+          >
             <dt className="text-slate-500">{row.label}</dt>
-            <dd className="font-medium text-slate-900">{row.value}</dd>
+            <dd className="break-all font-medium text-slate-900">{row.value}</dd>
           </div>
         ))}
       </dl>

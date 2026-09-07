@@ -4,9 +4,10 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
 const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ' +
+  'w-full rounded-md border border-slate-300 px-3 py-3 text-base outline-none ' +
   'focus:border-slate-900 focus:ring-1 focus:ring-slate-900 ' +
-  'aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-500';
+  'aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-500 ' +
+  'sm:py-2 sm:text-sm';
 
 type FieldProps = {
   name: string;

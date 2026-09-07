@@ -85,10 +85,10 @@ export function LanguageFields({
             )}
           </Field>
 
-          <div className="flex items-end">
+          <div className="flex items-end sm:pb-0">
             <button
               type="button"
-              className="pb-2 text-sm text-slate-500 underline hover:text-slate-900"
+              className="min-h-10 text-sm text-slate-500 underline hover:text-slate-900 sm:pb-2"
               onClick={() => {
                 // Последнюю строку не убираем, а очищаем: без единого <select name="languageId">
                 // сервер не отличил бы «языков нет» от «поле не отправлено».
