@@ -13,8 +13,12 @@ import { env } from '@/lib/env';
  * граф, сборка упадёт с внятной ошибкой, а не утечёт куки-логика в браузер.
  */
 export async function createClient() {
-  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env();
+  // Сначала cookies(), потом env(): чтение куки выводит маршрут из пререндера
+  // (ADR-0005), поэтому до env() сборка не доходит и работает без .env.local —
+  // ровно как обещает комментарий в src/lib/env.ts. В обратном порядке
+  // `next build` на машине без переменных падает на первой же странице с шапкой.
   const cookieStore = await cookies();
+  const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = env();
 
   return createServerClient<Database>(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
