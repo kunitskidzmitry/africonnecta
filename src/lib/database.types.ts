@@ -169,6 +169,107 @@ export type Database = {
           },
         ]
       }
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          joined_at: string
+          last_read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string
+          last_read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string
+          last_read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          expert_id: string
+          id: string
+          institution_id: string
+          last_message_at: string | null
+          opportunity_id: string | null
+          report_reason: string | null
+          reported_at: string | null
+          reported_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expert_id: string
+          id?: string
+          institution_id: string
+          last_message_at?: string | null
+          opportunity_id?: string | null
+          report_reason?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expert_id?: string
+          id?: string
+          institution_id?: string
+          last_message_at?: string | null
+          opportunity_id?: string | null
+          report_reason?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       countries: {
         Row: {
           id: number
@@ -482,6 +583,62 @@ export type Database = {
           },
         ]
       }
+      first_contacts: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          expert_id: string
+          id: number
+          institution_id: string
+          opened_by: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          expert_id: string
+          id?: never
+          institution_id: string
+          opened_by: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          expert_id?: string
+          id?: never
+          institution_id?: string
+          opened_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "first_contacts_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "first_contacts_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "first_contacts_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "first_contacts_opened_by_fkey"
+            columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       institution_members: {
         Row: {
           institution_id: string
@@ -662,6 +819,127 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_user_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_user_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_user_id_fkey"
+            columns: ["sender_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_email_outbox: {
+        Row: {
+          body: string
+          created_at: string
+          error: string | null
+          id: number
+          idempotency_key: string
+          notification_id: string
+          sent_at: string | null
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          error?: string | null
+          id?: never
+          idempotency_key: string
+          notification_id: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          error?: string | null
+          id?: never
+          idempotency_key?: string
+          notification_id?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_email_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          read_at: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          read_at?: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          read_at?: string | null
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       opportunities: {
         Row: {
@@ -873,6 +1151,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_read_conversation: {
+        Args: { target_conversation_id: string }
+        Returns: boolean
+      }
       current_institution_id: { Args: never; Returns: string }
       current_user_role: {
         Args: never
@@ -888,11 +1170,19 @@ export type Database = {
       }
       expertise_broaden: { Args: { ids: number[] }; Returns: number[] }
       is_admin: { Args: never; Returns: boolean }
+      is_conversation_participant: {
+        Args: { target_conversation_id: string }
+        Returns: boolean
+      }
       is_member_of: {
         Args: { target_institution_id: string }
         Returns: boolean
       }
       is_owner_of: { Args: { target_institution_id: string }; Returns: boolean }
+      mark_notifications_read: {
+        Args: { notification_ids?: string[] }
+        Returns: number
+      }
       my_expert_profile: {
         Args: never
         Returns: {
@@ -913,6 +1203,20 @@ export type Database = {
           published_at: string
           title: string
         }[]
+      }
+      notify_user: {
+        Args: {
+          email_body?: string
+          email_subject?: string
+          npayload: Json
+          ntype: Database["public"]["Enums"]["notification_type"]
+          target_user_id: string
+        }
+        Returns: string
+      }
+      report_conversation: {
+        Args: { reason: string; target_conversation_id: string }
+        Returns: undefined
       }
       reveal_expert_contacts: {
         Args: { target_expert_id: string }
@@ -952,8 +1256,20 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      send_message: {
+        Args: { message_body: string; target_conversation_id: string }
+        Returns: string
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      start_conversation: {
+        Args: {
+          initial_body: string
+          related_opportunity_id?: string
+          target_expert_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       academic_level: "professor" | "lecturer" | "researcher" | "phd_candidate"
@@ -982,6 +1298,15 @@ export type Database = {
         | "expired"
         | "cancelled"
       member_role: "owner" | "admin" | "member"
+      notification_type:
+        | "invitation_received"
+        | "application_received"
+        | "application_status_changed"
+        | "message_received"
+        | "verification_result"
+        | "opportunity_deadline"
+        | "acs_recomputed"
+        | "conversation_reported"
       opportunity_mode: "online" | "hybrid" | "onsite"
       opportunity_status: "draft" | "published" | "closed"
       opportunity_type:
@@ -1170,6 +1495,16 @@ export const Constants = {
         "cancelled",
       ],
       member_role: ["owner", "admin", "member"],
+      notification_type: [
+        "invitation_received",
+        "application_received",
+        "application_status_changed",
+        "message_received",
+        "verification_result",
+        "opportunity_deadline",
+        "acs_recomputed",
+        "conversation_reported",
+      ],
       opportunity_mode: ["online", "hybrid", "onsite"],
       opportunity_status: ["draft", "published", "closed"],
       opportunity_type: [

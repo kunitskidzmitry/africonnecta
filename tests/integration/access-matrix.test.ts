@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Client } from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { anon, DATABASE_URL, SEED_PASSWORD } from './local-stack';
 
@@ -922,5 +922,176 @@ describe('приглашения', () => {
     });
 
     expect(error).not.toBeNull();
+  });
+});
+
+describe('переписка и уведомления', () => {
+  afterEach(async () => {
+    await db.query(
+      `delete from public.conversations
+       where institution_id = $1 and expert_id = $2`,
+      [INSTITUTION_VERIFIED, EXPERT_PUBLIC],
+    );
+    await db.query(
+      `delete from public.conversations
+       where institution_id = $1 and expert_id = $2`,
+      [INSTITUTION_VERIFIED, EXPERT_DRAFT],
+    );
+    await db.query('delete from public.notifications where user_id = any($1::uuid[])', [
+      [USER_EXPERT, USER_INSTITUTION],
+    ]);
+  });
+
+  it('гость не читает разговоры и не стартует переписку', async () => {
+    const { data } = await guest().from('conversations').select('id');
+    expect(data).toEqual([]);
+
+    const { error } = await guest().rpc('start_conversation', {
+      target_expert_id: EXPERT_PUBLIC,
+      initial_body: 'Hello from the street',
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it('клиент не вставляет сообщения напрямую', async () => {
+    const { error } = await as('institution').from('messages').insert({
+      conversation_id: '99999999-9999-9999-9999-999999999999',
+      sender_user_id: USER_INSTITUTION,
+      body: 'direct insert',
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it('верифицированная институция открывает разговор; эксперт видит, админ — нет', async () => {
+    const { data: conversationId, error } = await as('institution').rpc('start_conversation', {
+      target_expert_id: EXPERT_PUBLIC,
+      initial_body: 'We would like to discuss a guest lecture.',
+    });
+
+    expect(error).toBeNull();
+    expect(conversationId).toEqual(expect.any(String));
+
+    const { data: forExpert } = await as('expert')
+      .from('messages')
+      .select('body')
+      .eq('conversation_id', conversationId!);
+    expect(forExpert).toEqual([{ body: 'We would like to discuss a guest lecture.' }]);
+
+    const { data: forAdmin } = await as('admin')
+      .from('conversations')
+      .select('id')
+      .eq('id', conversationId!);
+    expect(forAdmin).toEqual([]);
+
+    const { data: notifications } = await as('expert')
+      .from('notifications')
+      .select('type')
+      .eq('type', 'message_received');
+    expect(notifications?.length).toBeGreaterThan(0);
+  });
+
+  it('после жалобы админ читает разговор', async () => {
+    const { data: conversationId } = await as('institution').rpc('start_conversation', {
+      target_expert_id: EXPERT_PUBLIC,
+      initial_body: 'Please review this collaboration idea.',
+    });
+
+    const { error: reportError } = await as('expert').rpc('report_conversation', {
+      target_conversation_id: conversationId!,
+      reason: 'Suspicious outreach',
+    });
+    expect(reportError).toBeNull();
+
+    const { data: forAdmin } = await as('admin')
+      .from('conversations')
+      .select('id, reported_at')
+      .eq('id', conversationId!);
+    expect(forAdmin).toEqual([{ id: conversationId, reported_at: expect.any(String) }]);
+  });
+
+  it('неверифицированная институция не открывает первый контакт', async () => {
+    const { error } = await as('unverifiedInstitution').rpc('start_conversation', {
+      target_expert_id: EXPERT_PUBLIC,
+      initial_body: 'Should be blocked',
+    });
+    expect(error?.code).toBe('AF002');
+  });
+
+  it('квота first_contact ограничивает новые пары, но не повтор в том же разговоре', async () => {
+    await db.query("update public.plan_limits set first_contacts_per_day = 1 where plan = 'free'");
+
+    try {
+      const first = await as('institution').rpc('start_conversation', {
+        target_expert_id: EXPERT_PUBLIC,
+        initial_body: 'First allowed contact',
+      });
+      expect(first.error).toBeNull();
+
+      const repeat = await as('institution').rpc('start_conversation', {
+        target_expert_id: EXPERT_PUBLIC,
+        initial_body: 'Follow-up in the same thread',
+      });
+      expect(repeat.error).toBeNull();
+
+      await db.query(
+        `update public.experts
+         set published_at = now(), profile_visibility = 'public'
+         where id = $1`,
+        [EXPERT_DRAFT],
+      );
+
+      const overQuota = await as('institution').rpc('start_conversation', {
+        target_expert_id: EXPERT_DRAFT,
+        initial_body: 'Second new expert — should hit quota',
+      });
+      expect(overQuota.error?.code).toBe('AF003');
+    } finally {
+      await db.query(
+        "update public.plan_limits set first_contacts_per_day = 5 where plan = 'free'",
+      );
+      await db.query(
+        `update public.experts
+         set published_at = null, profile_visibility = 'public'
+         where id = $1`,
+        [EXPERT_DRAFT],
+      );
+      await db.query('delete from public.first_contacts where institution_id = $1', [
+        INSTITUTION_VERIFIED,
+      ]);
+    }
+  });
+
+  it('эксперт открывает разговор только по опубликованной вакансии', async () => {
+    const withoutOpp = await as('expert').rpc('start_conversation', {
+      target_expert_id: EXPERT_PUBLIC,
+      initial_body: 'No opportunity context',
+    });
+    expect(withoutOpp.error).not.toBeNull();
+
+    const withOpp = await as('expert').rpc('start_conversation', {
+      target_expert_id: EXPERT_PUBLIC,
+      initial_body: 'I am interested in this lectureship.',
+      related_opportunity_id: OPPORTUNITY_PUBLISHED,
+    });
+    expect(withOpp.error).toBeNull();
+
+    const { data: messages } = await as('institution')
+      .from('messages')
+      .select('body')
+      .eq('conversation_id', withOpp.data!);
+    expect(messages).toEqual([{ body: 'I am interested in this lectureship.' }]);
+  });
+
+  it('чужой эксперт не читает чужой разговор (IDOR)', async () => {
+    const { data: conversationId } = await as('institution').rpc('start_conversation', {
+      target_expert_id: EXPERT_PUBLIC,
+      initial_body: 'Private thread',
+    });
+
+    const { data } = await as('hiddenExpert')
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId!);
+    expect(data).toEqual([]);
   });
 });

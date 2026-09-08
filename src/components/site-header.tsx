@@ -3,12 +3,14 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { signOut } from '@/lib/auth/actions';
 import { getAppSession } from '@/lib/auth/session';
+import { countUnreadNotifications } from '@/lib/messaging/load';
 
 export async function SiteHeader() {
   const locale = await getLocale();
   const t = await getTranslations('Header');
   const session = await getAppSession();
   const active = session?.status === 'active' ? session : null;
+  const unread = active ? await countUnreadNotifications() : 0;
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -33,6 +35,26 @@ export async function SiteHeader() {
 
           {active ? (
             <>
+              <Link
+                href="/messages"
+                className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
+              >
+                {t('messages')}
+              </Link>
+              <Link
+                href="/notifications"
+                className="inline-flex min-h-10 items-center gap-1.5 text-slate-600 hover:text-slate-900"
+              >
+                {t('notifications')}
+                {unread > 0 ? (
+                  <span
+                    className="inline-flex min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 text-xs font-semibold text-white"
+                    aria-label={t('unreadBadge', { count: unread })}
+                  >
+                    {unread > 99 ? '99+' : unread}
+                  </span>
+                ) : null}
+              </Link>
               {active.role === 'expert' && active.expertId ? (
                 <>
                   <Link

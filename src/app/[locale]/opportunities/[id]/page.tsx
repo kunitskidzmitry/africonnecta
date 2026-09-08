@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
+import { StartConversationForm } from '@/components/messaging/start-conversation-form';
 import { ApplyForm } from '@/components/opportunities/apply-form';
 import { InviteForm } from '@/components/opportunities/invite-form';
 import { Link } from '@/i18n/navigation';
@@ -27,8 +28,9 @@ export default async function OpportunityDetailPage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const [t, session, opportunity] = await Promise.all([
+  const [t, tm, session, opportunity] = await Promise.all([
     getTranslations('Opportunities'),
+    getTranslations('Messaging'),
     getAppSession(),
     getOpportunity(id),
   ]);
@@ -108,6 +110,17 @@ export default async function OpportunityDetailPage({
           ) : (
             <ApplyForm locale={locale} opportunityId={id} />
           )}
+          {session?.expertId ? (
+            <div className="flex flex-col gap-3 pt-2">
+              <h3 className="font-semibold">{tm('messageAboutOpportunity')}</h3>
+              <StartConversationForm
+                locale={locale}
+                mode="expert"
+                expertId={session.expertId}
+                opportunityId={id}
+              />
+            </div>
+          ) : null}
         </section>
       ) : null}
 
