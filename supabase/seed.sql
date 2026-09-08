@@ -240,3 +240,52 @@ values
    (select id from languages where iso639_1 = 'en'), 'c1'),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
    (select id from languages where iso639_1 = 'fr'), 'b2');
+
+-- ---------------------------------------------------------------------------
+-- Вакансии (M3)
+--
+-- Опубликованная — для доски и заявок. Черновик — чтобы проверить, что чужие
+-- роли его не видят (§8.1 / deny by default).
+-- ---------------------------------------------------------------------------
+
+insert into opportunities (
+  id, institution_id, created_by, title, description, type, mode,
+  country_id, location, status, published_at
+)
+values (
+  'ffffffff-ffff-ffff-ffff-ffffffffffff',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '22222222-2222-2222-2222-222222222222',
+  'Guest Lecturer in Artificial Intelligence',
+  'Deliver a short guest lecture series on AI applications in East African higher education.',
+  'lectureship',
+  'hybrid',
+  (select id from countries where iso2 = 'RW'),
+  'Kigali, Rwanda',
+  'published',
+  now()
+);
+
+insert into opportunities (
+  id, institution_id, created_by, title, description, type, mode,
+  country_id, status
+)
+values (
+  'f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0',
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '22222222-2222-2222-2222-222222222222',
+  'Internal draft — not for the board',
+  'Draft opportunity used only in access-matrix tests.',
+  'research',
+  'online',
+  (select id from countries where iso2 = 'RW'),
+  'draft'
+);
+
+insert into opportunity_requirements (opportunity_id, kind, ref_value, is_mandatory)
+values (
+  'ffffffff-ffff-ffff-ffff-ffffffffffff',
+  'expertise',
+  (select id::text from expertise where slug = 'artificial-intelligence'),
+  true
+);

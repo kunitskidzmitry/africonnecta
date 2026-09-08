@@ -623,3 +623,304 @@ describe('справочники', () => {
     expect(error).not.toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Opportunity Board (M3). Строка матрицы §8.1 «Создать вакансию» + IDOR заявок.
+// ---------------------------------------------------------------------------
+
+const OPPORTUNITY_PUBLISHED = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+const OPPORTUNITY_DRAFT = 'f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0';
+
+describe('вакансии', () => {
+  const seePublished: [string, () => SupabaseClient][] = [
+    ['гость', guest],
+    ['эксперт', () => as('expert')],
+    ['представитель институции', () => as('institution')],
+    ['администратор', () => as('admin')],
+  ];
+
+  it.each(seePublished)('опубликованная вакансия видна: %s', async (_name, client) => {
+    const { data } = await client()
+      .from('opportunities')
+      .select('id, title')
+      .eq('id', OPPORTUNITY_PUBLISHED);
+
+    expect(data).toEqual([
+      {
+        id: OPPORTUNITY_PUBLISHED,
+        title: 'Guest Lecturer in Artificial Intelligence',
+      },
+    ]);
+  });
+
+  const cannotSeeDraft: [string, () => SupabaseClient][] = [
+    ['гость', guest],
+    ['эксперт', () => as('expert')],
+    ['чужая институция', () => as('unverifiedInstitution')],
+  ];
+
+  it.each(cannotSeeDraft)('черновик чужой институции не виден: %s', async (_name, client) => {
+    const { data } = await client().from('opportunities').select('id').eq('id', OPPORTUNITY_DRAFT);
+
+    expect(data).toEqual([]);
+  });
+
+  it('черновик виден своей институции', async () => {
+    const { data } = await as('institution')
+      .from('opportunities')
+      .select('id')
+      .eq('id', OPPORTUNITY_DRAFT);
+
+    expect(data).toEqual([{ id: OPPORTUNITY_DRAFT }]);
+  });
+
+  it('член институции создаёт вакансию', async () => {
+    const { data, error } = await as('institution')
+      .from('opportunities')
+      .insert({
+        institution_id: INSTITUTION_VERIFIED,
+        created_by: USER_INSTITUTION,
+        title: 'Thesis Supervisors — Public Health',
+        description: 'Seeking supervisors for MSc theses in public health.',
+        type: 'supervision',
+        mode: 'online',
+        status: 'draft',
+      })
+      .select('id, status')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.status).toBe('draft');
+
+    await as('institution').from('opportunities').delete().eq('id', data!.id);
+  });
+
+  const cannotCreate: [string, ActorName | null][] = [
+    ['гость', null],
+    ['эксперт', 'expert'],
+  ];
+
+  it.each(cannotCreate)('вакансию не создаёт: %s', async (_name, actor) => {
+    const client = actor ? as(actor) : guest();
+    const { data, error } = await client
+      .from('opportunities')
+      .insert({
+        institution_id: INSTITUTION_VERIFIED,
+        created_by: actor === 'expert' ? USER_EXPERT : USER_INSTITUTION,
+        title: 'Forbidden vacancy',
+        description: 'Should be rejected by RLS.',
+        type: 'research',
+        mode: 'online',
+        status: 'draft',
+      })
+      .select('id');
+
+    expect(error).not.toBeNull();
+    expect(data ?? []).toEqual([]);
+  });
+
+  it('член институции публикует черновик', async () => {
+    const { data: created } = await as('institution')
+      .from('opportunities')
+      .insert({
+        institution_id: INSTITUTION_VERIFIED,
+        created_by: USER_INSTITUTION,
+        title: 'Research Collaboration on Climate Adaptation',
+        description: 'Joint research proposal for climate adaptation in the Great Lakes.',
+        type: 'research',
+        mode: 'hybrid',
+        status: 'draft',
+      })
+      .select('id')
+      .single();
+
+    const { data, error } = await as('institution')
+      .from('opportunities')
+      .update({ status: 'published' })
+      .eq('id', created!.id)
+      .select('status, published_at')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.status).toBe('published');
+    expect(data?.published_at).not.toBeNull();
+
+    // Опубликованную вакансию член не удаляет (только draft) — чистим через SQL.
+    await db.query('delete from public.opportunities where id = $1', [created!.id]);
+  });
+});
+
+describe('заявки на вакансии', () => {
+  it('эксперт подаёт заявку на опубликованную вакансию', async () => {
+    const { data, error } = await as('expert')
+      .from('applications')
+      .insert({
+        opportunity_id: OPPORTUNITY_PUBLISHED,
+        expert_id: EXPERT_PUBLIC,
+        cover_letter: 'I teach related topics at the University of Rwanda.',
+      })
+      .select('id, status')
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.status).toBe('submitted');
+
+    await db.query('delete from public.applications where id = $1', [data!.id]);
+  });
+
+  it('эксперт не подаёт заявку от чужого профиля', async () => {
+    const { data, error } = await as('hiddenExpert')
+      .from('applications')
+      .insert({
+        opportunity_id: OPPORTUNITY_PUBLISHED,
+        expert_id: EXPERT_PUBLIC,
+        cover_letter: 'IDOR attempt',
+      })
+      .select('id');
+
+    expect(error).not.toBeNull();
+    expect(data ?? []).toEqual([]);
+  });
+
+  it('гость не подаёт заявку', async () => {
+    const { data, error } = await guest()
+      .from('applications')
+      .insert({
+        opportunity_id: OPPORTUNITY_PUBLISHED,
+        expert_id: EXPERT_PUBLIC,
+      })
+      .select('id');
+
+    expect(error).not.toBeNull();
+    expect(data ?? []).toEqual([]);
+  });
+
+  it('институция принимает заявку и появляется engagement', async () => {
+    const { data: application } = await as('expert')
+      .from('applications')
+      .insert({
+        opportunity_id: OPPORTUNITY_PUBLISHED,
+        expert_id: EXPERT_PUBLIC,
+        cover_letter: 'Ready to collaborate.',
+      })
+      .select('id')
+      .single();
+
+    const { error } = await as('institution')
+      .from('applications')
+      .update({ status: 'accepted' })
+      .eq('id', application!.id);
+
+    expect(error).toBeNull();
+
+    const { data: engagement } = await as('institution')
+      .from('engagements')
+      .select('source_type, source_id, expert_id')
+      .eq('source_id', application!.id)
+      .single();
+
+    expect(engagement).toEqual({
+      source_type: 'application',
+      source_id: application!.id,
+      expert_id: EXPERT_PUBLIC,
+    });
+
+    // Чужой эксперт не читает чужой engagement (IDOR).
+    const { data: leaked } = await as('hiddenExpert')
+      .from('engagements')
+      .select('id')
+      .eq('source_id', application!.id);
+
+    expect(leaked).toEqual([]);
+
+    await db.query('delete from public.engagements where source_id = $1', [application!.id]);
+    await db.query('delete from public.applications where id = $1', [application!.id]);
+  });
+
+  it('институция не меняет заявку на чужой вакансии', async () => {
+    const { data: application, error: applyError } = await as('expert')
+      .from('applications')
+      .insert({
+        opportunity_id: OPPORTUNITY_PUBLISHED,
+        expert_id: EXPERT_PUBLIC,
+      })
+      .select('id')
+      .single();
+
+    expect(applyError).toBeNull();
+    expect(application).not.toBeNull();
+
+    const { data } = await as('unverifiedInstitution')
+      .from('applications')
+      .update({ status: 'rejected' })
+      .eq('id', application!.id)
+      .select('id');
+
+    expect(data).toEqual([]);
+
+    await db.query('delete from public.applications where id = $1', [application!.id]);
+  });
+});
+
+describe('приглашения', () => {
+  it('институция приглашает эксперта; эксперт принимает → engagement', async () => {
+    const { data: invitation, error: inviteError } = await as('institution')
+      .from('invitations')
+      .insert({
+        institution_id: INSTITUTION_VERIFIED,
+        expert_id: EXPERT_PUBLIC,
+        opportunity_id: OPPORTUNITY_PUBLISHED,
+        message: 'We would like you to join this lectureship.',
+      })
+      .select('id')
+      .single();
+
+    expect(inviteError).toBeNull();
+
+    const { error: acceptError } = await as('expert')
+      .from('invitations')
+      .update({ status: 'accepted' })
+      .eq('id', invitation!.id);
+
+    expect(acceptError).toBeNull();
+
+    const { data: engagement } = await as('expert')
+      .from('engagements')
+      .select('source_type, institution_id')
+      .eq('source_id', invitation!.id)
+      .single();
+
+    expect(engagement).toEqual({
+      source_type: 'invitation',
+      institution_id: INSTITUTION_VERIFIED,
+    });
+
+    await db.query('delete from public.engagements where source_id = $1', [invitation!.id]);
+    await db.query('delete from public.invitations where id = $1', [invitation!.id]);
+  });
+
+  it('эксперт не создаёт приглашение', async () => {
+    const { data, error } = await as('expert')
+      .from('invitations')
+      .insert({
+        institution_id: INSTITUTION_VERIFIED,
+        expert_id: EXPERT_PUBLIC,
+        message: 'self-invite',
+      })
+      .select('id');
+
+    expect(error).not.toBeNull();
+    expect(data ?? []).toEqual([]);
+  });
+
+  it('клиент не пишет engagement напрямую', async () => {
+    const { error } = await as('institution').from('engagements').insert({
+      expert_id: EXPERT_PUBLIC,
+      institution_id: INSTITUTION_VERIFIED,
+      source_type: 'invitation',
+      source_id: '99999999-9999-9999-9999-999999999999',
+    });
+
+    expect(error).not.toBeNull();
+  });
+});

@@ -63,6 +63,15 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         </Link>
       ) : null}
 
+      {session.role === 'institution_member' ? (
+        <Link
+          href="/opportunities"
+          className="rounded-md bg-slate-900 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-slate-700"
+        >
+          {t('continueToOpportunities')}
+        </Link>
+      ) : null}
+
       <form action={signOut}>
         <input type="hidden" name="locale" value={locale} />
         <button type="submit" className="text-sm text-slate-500 underline hover:text-slate-900">

@@ -35,11 +35,109 @@
   "Header": {
     "home": "AfriConnecta",
     "search": "Find experts",
+    "opportunities": "Opportunities",
+    "invitations": "Invitations",
     "signIn": "Sign in",
     "register": "Create account",
     "profile": "My profile",
     "account": "Account",
     "signOut": "Sign out"
+  },
+  "Opportunities": {
+    "title": "Opportunity Board",
+    "subtitle": "Guest lectures, research collaborations, supervision and consulting posted by institutions.",
+    "boardTitle": "Open opportunities",
+    "mineTitle": "Your institution’s posts",
+    "empty": "No published opportunities yet.",
+    "postCta": "Post an opportunity",
+    "backToBoard": "Back to the board",
+    "newTitle": "Post an opportunity",
+    "newSubtitle": "Drafts stay private to your institution until you publish.",
+    "fieldTitle": "Title",
+    "fieldDescription": "Description",
+    "fieldType": "Type",
+    "fieldMode": "Mode",
+    "fieldLocation": "Location",
+    "fieldDuration": "Duration",
+    "fieldCoverLetter": "Cover letter",
+    "fieldExpertId": "Expert profile id",
+    "fieldInviteMessage": "Message",
+    "expertIdHint": "Use the expert’s profile id from their public URL or from search (demo: Yves Habimana is bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb).",
+    "selectPlaceholder": "Select…",
+    "publishNow": "Publish immediately",
+    "createSubmit": "Save opportunity",
+    "creating": "Saving…",
+    "publish": "Publish",
+    "close": "Close opportunity",
+    "applyTitle": "Apply",
+    "applySubmit": "Submit application",
+    "applying": "Submitting…",
+    "applySuccess": "Application submitted.",
+    "alreadyApplied": "You already applied — status: {status}.",
+    "applicationsTitle": "Applications",
+    "applicationsEmpty": "No applications yet.",
+    "inviteTitle": "Invite an expert",
+    "inviteSubmit": "Send invitation",
+    "inviting": "Sending…",
+    "inviteSuccess": "Invitation sent.",
+    "invitationsTitle": "Your invitations",
+    "invitationsSubtitle": "Direct invitations from institutions.",
+    "invitationsEmpty": "You have no invitations yet.",
+    "viewOpportunity": "View opportunity",
+    "types": {
+      "lectureship": "Lectureship",
+      "supervision": "Supervision",
+      "research": "Research",
+      "mentorship": "Mentorship",
+      "consulting": "Consulting",
+      "conference": "Conference",
+      "other": "Other"
+    },
+    "modes": {
+      "online": "Online",
+      "hybrid": "Hybrid",
+      "onsite": "On-site"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "published": "Published",
+      "closed": "Closed"
+    },
+    "applicationStatuses": {
+      "submitted": "Submitted",
+      "under_review": "Under review",
+      "shortlisted": "Shortlisted",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
+    },
+    "invitationStatuses": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "decisions": {
+      "shortlisted": "Shortlist",
+      "accepted": "Accept",
+      "rejected": "Reject"
+    },
+    "invitationDecisions": {
+      "accepted": "Accept",
+      "declined": "Decline"
+    }
+  },
+  "OpportunityErrors": {
+    "titleRequired": "Enter a title.",
+    "descriptionRequired": "Enter a description.",
+    "typeInvalid": "Select a type.",
+    "modeInvalid": "Select a mode.",
+    "coverLetterTooLong": "Keep the cover letter under 5000 characters.",
+    "messageTooLong": "Keep the message under 2000 characters.",
+    "expertRequired": "Enter a valid expert profile id.",
+    "forbidden": "You do not have permission to do that.",
+    "unknown": "Something went wrong on our side. Please try again."
   },
   "Login": {
     "title": "Sign in",
@@ -176,7 +274,8 @@
     "signOut": "Sign out",
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign in",
-    "continueToProfile": "Continue to your profile"
+    "continueToProfile": "Continue to your profile",
+    "continueToOpportunities": "Go to Opportunity Board"
   },
   "RegisterErrors": {
     "emailInvalid": "Enter a valid email address.",

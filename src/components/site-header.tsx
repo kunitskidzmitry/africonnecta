@@ -24,16 +24,30 @@ export async function SiteHeader() {
           >
             {t('search')}
           </Link>
+          <Link
+            href="/opportunities"
+            className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
+          >
+            {t('opportunities')}
+          </Link>
 
           {active ? (
             <>
               {active.role === 'expert' && active.expertId ? (
-                <Link
-                  href="/profile"
-                  className="inline-flex min-h-10 items-center font-medium text-slate-900 hover:underline"
-                >
-                  {t('profile')}
-                </Link>
+                <>
+                  <Link
+                    href="/profile"
+                    className="inline-flex min-h-10 items-center font-medium text-slate-900 hover:underline"
+                  >
+                    {t('profile')}
+                  </Link>
+                  <Link
+                    href="/invitations"
+                    className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
+                  >
+                    {t('invitations')}
+                  </Link>
+                </>
               ) : (
                 <Link
                   href="/welcome"

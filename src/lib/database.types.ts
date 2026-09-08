@@ -34,6 +34,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          cover_letter: string | null
+          created_at: string
+          expert_id: string
+          id: string
+          opportunity_id: string
+          status: Database["public"]["Enums"]["application_status"]
+          updated_at: string
+        }
+        Insert: {
+          cover_letter?: string | null
+          created_at?: string
+          expert_id: string
+          id?: string
+          opportunity_id: string
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+        }
+        Update: {
+          cover_letter?: string | null
+          created_at?: string
+          expert_id?: string
+          id?: string
+          opportunity_id?: string
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -147,6 +192,48 @@ export type Database = {
           region?: string | null
         }
         Relationships: []
+      }
+      engagements: {
+        Row: {
+          confirmed_at: string
+          expert_id: string
+          id: string
+          institution_id: string
+          source_id: string
+          source_type: Database["public"]["Enums"]["engagement_source"]
+        }
+        Insert: {
+          confirmed_at?: string
+          expert_id: string
+          id?: string
+          institution_id: string
+          source_id: string
+          source_type: Database["public"]["Enums"]["engagement_source"]
+        }
+        Update: {
+          confirmed_at?: string
+          expert_id?: string
+          id?: string
+          institution_id?: string
+          source_id?: string
+          source_type?: Database["public"]["Enums"]["engagement_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagements_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagements_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expert_expertise: {
         Row: {
@@ -500,6 +587,64 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          created_at: string
+          expert_id: string
+          expires_at: string | null
+          id: string
+          institution_id: string
+          message: string | null
+          opportunity_id: string | null
+          status: Database["public"]["Enums"]["invitation_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expert_id: string
+          expires_at?: string | null
+          id?: string
+          institution_id: string
+          message?: string | null
+          opportunity_id?: string | null
+          status?: Database["public"]["Enums"]["invitation_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expert_id?: string
+          expires_at?: string | null
+          id?: string
+          institution_id?: string
+          message?: string | null
+          opportunity_id?: string | null
+          status?: Database["public"]["Enums"]["invitation_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       languages: {
         Row: {
           id: number
@@ -518,6 +663,120 @@ export type Database = {
         }
         Relationships: []
       }
+      opportunities: {
+        Row: {
+          compensation_amount: number | null
+          compensation_currency: string | null
+          country_id: number | null
+          created_at: string
+          created_by: string
+          deadline: string | null
+          description: string
+          duration: string | null
+          id: string
+          institution_id: string
+          location: string | null
+          mode: Database["public"]["Enums"]["opportunity_mode"]
+          published_at: string | null
+          status: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+          updated_at: string
+        }
+        Insert: {
+          compensation_amount?: number | null
+          compensation_currency?: string | null
+          country_id?: number | null
+          created_at?: string
+          created_by: string
+          deadline?: string | null
+          description: string
+          duration?: string | null
+          id?: string
+          institution_id: string
+          location?: string | null
+          mode: Database["public"]["Enums"]["opportunity_mode"]
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+          updated_at?: string
+        }
+        Update: {
+          compensation_amount?: number | null
+          compensation_currency?: string | null
+          country_id?: number | null
+          created_at?: string
+          created_by?: string
+          deadline?: string | null
+          description?: string
+          duration?: string | null
+          id?: string
+          institution_id?: string
+          location?: string | null
+          mode?: Database["public"]["Enums"]["opportunity_mode"]
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["opportunity_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_requirements: {
+        Row: {
+          id: number
+          is_mandatory: boolean
+          kind: Database["public"]["Enums"]["requirement_kind"]
+          opportunity_id: string
+          ref_value: string
+        }
+        Insert: {
+          id?: never
+          is_mandatory?: boolean
+          kind: Database["public"]["Enums"]["requirement_kind"]
+          opportunity_id: string
+          ref_value: string
+        }
+        Update: {
+          id?: never
+          is_mandatory?: boolean
+          kind?: Database["public"]["Enums"]["requirement_kind"]
+          opportunity_id?: string
+          ref_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_requirements_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_limits: {
         Row: {
           contact_disclosures_per_day: number
@@ -535,6 +794,49 @@ export type Database = {
           plan?: string
         }
         Relationships: []
+      }
+      saved_experts: {
+        Row: {
+          created_at: string
+          expert_id: string
+          institution_id: string
+          saved_by: string
+        }
+        Insert: {
+          created_at?: string
+          expert_id: string
+          institution_id: string
+          saved_by: string
+        }
+        Update: {
+          created_at?: string
+          expert_id?: string
+          institution_id?: string
+          saved_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_experts_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_experts_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_experts_saved_by_fkey"
+            columns: ["saved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
@@ -655,6 +957,14 @@ export type Database = {
     }
     Enums: {
       academic_level: "professor" | "lecturer" | "researcher" | "phd_candidate"
+      application_status:
+        | "submitted"
+        | "under_review"
+        | "shortlisted"
+        | "accepted"
+        | "rejected"
+        | "withdrawn"
+      engagement_source: "application" | "invitation"
       file_kind: "photo" | "cv"
       file_scan_status: "pending" | "clean" | "infected" | "failed"
       institution_type:
@@ -665,8 +975,25 @@ export type Database = {
         | "ngo"
         | "international_organization"
         | "other"
+      invitation_status:
+        | "pending"
+        | "accepted"
+        | "declined"
+        | "expired"
+        | "cancelled"
       member_role: "owner" | "admin" | "member"
+      opportunity_mode: "online" | "hybrid" | "onsite"
+      opportunity_status: "draft" | "published" | "closed"
+      opportunity_type:
+        | "lectureship"
+        | "supervision"
+        | "research"
+        | "mentorship"
+        | "consulting"
+        | "conference"
+        | "other"
       profile_visibility: "public" | "authenticated" | "hidden"
+      requirement_kind: "expertise" | "language" | "academic_level" | "country"
       user_role: "expert" | "institution_member" | "admin"
       user_status: "pending" | "active" | "suspended"
     }
@@ -815,6 +1142,15 @@ export const Constants = {
   public: {
     Enums: {
       academic_level: ["professor", "lecturer", "researcher", "phd_candidate"],
+      application_status: [
+        "submitted",
+        "under_review",
+        "shortlisted",
+        "accepted",
+        "rejected",
+        "withdrawn",
+      ],
+      engagement_source: ["application", "invitation"],
       file_kind: ["photo", "cv"],
       file_scan_status: ["pending", "clean", "infected", "failed"],
       institution_type: [
@@ -826,8 +1162,27 @@ export const Constants = {
         "international_organization",
         "other",
       ],
+      invitation_status: [
+        "pending",
+        "accepted",
+        "declined",
+        "expired",
+        "cancelled",
+      ],
       member_role: ["owner", "admin", "member"],
+      opportunity_mode: ["online", "hybrid", "onsite"],
+      opportunity_status: ["draft", "published", "closed"],
+      opportunity_type: [
+        "lectureship",
+        "supervision",
+        "research",
+        "mentorship",
+        "consulting",
+        "conference",
+        "other",
+      ],
       profile_visibility: ["public", "authenticated", "hidden"],
+      requirement_kind: ["expertise", "language", "academic_level", "country"],
       user_role: ["expert", "institution_member", "admin"],
       user_status: ["pending", "active", "suspended"],
     },
