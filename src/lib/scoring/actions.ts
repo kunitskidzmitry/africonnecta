@@ -88,16 +88,19 @@ export async function runMatchForOpportunity(
     return { formError: 'forbidden', ok: false };
   }
 
+  let runId: string;
   try {
-    const { runId } = await runOpportunityMatch({
+    ({ runId } = await runOpportunityMatch({
       opportunityId,
       actorUserId: session.userId,
       institutionId,
-    });
-    redirect({ href: `/opportunities/${opportunityId}/matches?run=${runId}`, locale });
+    }));
   } catch {
     return { formError: 'unknown', ok: false };
   }
+
+  // redirect() throws; must stay outside try/catch (same pattern as auth/actions).
+  redirect({ href: `/opportunities/${opportunityId}/matches?run=${runId}`, locale });
 }
 
 export async function runMatchForOpportunityForm(formData: FormData): Promise<void> {
