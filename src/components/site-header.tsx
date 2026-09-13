@@ -79,10 +79,10 @@ export async function SiteHeader() {
               ) : active.role === 'admin' ? (
                 <>
                   <Link
-                    href="/admin/verification"
+                    href="/admin"
                     className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
                   >
-                    {t('verification')}
+                    {t('admin')}
                   </Link>
                   <Link
                     href="/welcome"

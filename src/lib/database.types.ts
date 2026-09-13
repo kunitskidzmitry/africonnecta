@@ -71,6 +71,36 @@ export type Database = {
         }
         Relationships: []
       }
+      search_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          exact_count: number
+          final_count: number
+          id: string
+          mode: string
+          query: Json
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          exact_count: number
+          final_count: number
+          id?: string
+          mode: string
+          query?: Json
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          exact_count?: number
+          final_count?: number
+          id?: string
+          mode?: string
+          query?: Json
+        }
+        Relationships: []
+      }
       african_context_scores: {
         Row: {
           algorithm_version: string
@@ -1408,6 +1438,29 @@ export type Database = {
       admin_set_institution_verified: {
         Args: { approve: boolean; reason: string; target_institution_id: string }
         Returns: undefined
+      }
+      admin_set_user_status: {
+        Args: {
+          new_status: Database["public"]["Enums"]["user_status"]
+          reason: string
+          target_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_search_empty_rates: {
+        Args: { p_window_days?: number }
+        Returns: {
+          exact_empty_count: number
+          exact_empty_rate: number | null
+          final_empty_count: number
+          final_empty_rate: number | null
+          total_searches: number
+          window_days: number
+        }[]
+      }
+      admin_list_user_emails: {
+        Args: { target_ids: string[] }
+        Returns: { email: string; id: string }[]
       }
       decide_verification_request: {
         Args: { approve: boolean; reason: string; request_id: string }

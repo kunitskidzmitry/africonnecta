@@ -27,6 +27,8 @@ const INSTITUTION_VERIFIED = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const INSTITUTION_UNVERIFIED = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
 const USER_EXPERT = '11111111-1111-1111-1111-111111111111';
 const USER_INSTITUTION = '22222222-2222-2222-2222-222222222222';
+const USER_ADMIN = '33333333-3333-3333-3333-333333333333';
+const USER_SUSPENDED = '77777777-7777-7777-7777-777777777777';
 
 const ACTORS = {
   expert: 'expert@example.test',
@@ -1225,5 +1227,100 @@ describe('ACS и верификация', () => {
       reason: 'IDOR attempt',
     });
     expect(error?.code).toBe('42501');
+  });
+});
+
+describe('Admin Console M6', () => {
+  afterEach(async () => {
+    await db.query(`update public.users set status = 'active' where id = $1`, [USER_EXPERT]);
+    await db.query(`update public.users set status = 'suspended' where id = $1`, [USER_SUSPENDED]);
+    await db.query(`delete from public.search_events where query->>'test' = 'm6'`);
+    await db.query(
+      `delete from public.audit_log where action in ('user.suspend', 'user.unsuspend')`,
+    );
+  });
+
+  it('админ блокирует и разблокирует пользователя с причиной в audit_log', async () => {
+    const { error: suspendError } = await as('admin').rpc('admin_set_user_status', {
+      target_user_id: USER_EXPERT,
+      new_status: 'suspended',
+      reason: 'Abuse report follow-up',
+    });
+    expect(suspendError).toBeNull();
+
+    const { rows: suspended } = await db.query(
+      'select status::text from public.users where id = $1',
+      [USER_EXPERT],
+    );
+    expect(suspended[0]?.status).toBe('suspended');
+
+    const { rows: audit } = await db.query(
+      `select action, reason from public.audit_log
+       where action = 'user.suspend' and entity_id = $1
+       order by created_at desc limit 1`,
+      [USER_EXPERT],
+    );
+    expect(audit[0]).toEqual({ action: 'user.suspend', reason: 'Abuse report follow-up' });
+
+    const { error: unsuspendError } = await as('admin').rpc('admin_set_user_status', {
+      target_user_id: USER_EXPERT,
+      new_status: 'active',
+      reason: 'Appeal accepted',
+    });
+    expect(unsuspendError).toBeNull();
+
+    const { rows: active } = await db.query('select status::text from public.users where id = $1', [
+      USER_EXPERT,
+    ]);
+    expect(active[0]?.status).toBe('active');
+  });
+
+  it('не-админ не меняет статус через RPC; админ не трогает себя и других админов', async () => {
+    const { error: idor } = await as('institution').rpc('admin_set_user_status', {
+      target_user_id: USER_EXPERT,
+      new_status: 'suspended',
+      reason: 'IDOR attempt',
+    });
+    expect(idor?.code).toBe('42501');
+
+    const { error: self } = await as('admin').rpc('admin_set_user_status', {
+      target_user_id: USER_ADMIN,
+      new_status: 'suspended',
+      reason: 'Self lock',
+    });
+    expect(self?.code).toBe('42501');
+  });
+
+  it('гость пишет search_event; чужой эксперт не читает; админ читает и считает метрику', async () => {
+    const { error: insertError } = await guest()
+      .from('search_events')
+      .insert({
+        query: { test: 'm6', term: 'quantum farming' },
+        mode: 'exact',
+        exact_count: 0,
+        final_count: 0,
+      });
+    expect(insertError).toBeNull();
+
+    const { data: leaked } = await as('expert').from('search_events').select('id');
+    expect(leaked ?? []).toEqual([]);
+
+    const { data: adminRows, error: adminError } = await as('admin')
+      .from('search_events')
+      .select('exact_count, final_count')
+      .contains('query', { test: 'm6' });
+    expect(adminError).toBeNull();
+    expect(adminRows?.length).toBeGreaterThan(0);
+
+    const { data: rates, error: ratesError } = await as('admin').rpc('admin_search_empty_rates', {
+      p_window_days: 30,
+    });
+    expect(ratesError).toBeNull();
+    expect(rates?.[0]?.total_searches).toBeGreaterThan(0);
+
+    const { error: forbidden } = await as('expert').rpc('admin_search_empty_rates', {
+      p_window_days: 30,
+    });
+    expect(forbidden?.code).toBe('42501');
   });
 });

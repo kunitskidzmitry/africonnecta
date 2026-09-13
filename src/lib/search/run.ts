@@ -127,12 +127,51 @@ async function exact(
  * листать один список ключом от другого: страницы разъедутся, часть строк выпадет.
  * Пустая вторая страница — это конец выдачи, а не повод показать что-нибудь ещё.
  */
+async function recordSearchEvent(
+  supabase: Client,
+  query: ResolvedQuery,
+  exactCount: number,
+  result: SearchResult,
+): Promise<void> {
+  // Только первая страница: курсор принадлежит уже непустому листингу и размыл бы §10.
+  if (query.cursor) return;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from('search_events').insert({
+    actor_user_id: user?.id ?? null,
+    query: {
+      term: query.term || null,
+      countryIds: query.countryIds,
+      levels: query.levels,
+      expertiseIds: query.expertiseIds,
+      languageIds: query.languageIds,
+    },
+    mode: result.mode,
+    exact_count: exactCount,
+    final_count: result.rows.length,
+  });
+
+  // Метрика не должна ломать поиск: ошибка журнала только в лог окружения.
+  if (error) console.error('search_events insert failed', error.message);
+}
+
 export async function runSearch(query: ResolvedQuery): Promise<SearchResult> {
   const supabase = await createClient();
   const found = await exact(supabase, query, query.expertiseIds);
+  const exactCount = found.length;
 
   if (found.length > 0 || query.cursor) {
-    return { mode: 'exact', rows: found, next: nextCursor(found), broadenedTo: [] };
+    const result: SearchResult = {
+      mode: 'exact',
+      rows: found,
+      next: nextCursor(found),
+      broadenedTo: [],
+    };
+    await recordSearchEvent(supabase, query, exactCount, result);
+    return result;
   }
 
   if (query.expertiseIds.length > 0) {
@@ -150,12 +189,14 @@ export async function runSearch(query: ResolvedQuery): Promise<SearchResult> {
       const wideRows = await exact(supabase, query, broadened);
 
       if (wideRows.length > 0) {
-        return {
+        const result: SearchResult = {
           mode: 'broadened',
           rows: wideRows,
           next: nextCursor(wideRows),
           broadenedTo: broadened,
         };
+        await recordSearchEvent(supabase, query, exactCount, result);
+        return result;
       }
     }
   }
@@ -173,9 +214,23 @@ export async function runSearch(query: ResolvedQuery): Promise<SearchResult> {
     // Пагинации у подсказки нет: next остаётся null намеренно, см. миграцию
     // 20260906220000 — это подсказка на пустой экран, а не выдача.
     if (similar.length > 0) {
-      return { mode: 'similar', rows: similar, next: null, broadenedTo: [] };
+      const result: SearchResult = {
+        mode: 'similar',
+        rows: similar,
+        next: null,
+        broadenedTo: [],
+      };
+      await recordSearchEvent(supabase, query, exactCount, result);
+      return result;
     }
   }
 
-  return { mode: 'exact', rows: [], next: null, broadenedTo: [] };
+  const empty: SearchResult = {
+    mode: 'exact',
+    rows: [],
+    next: null,
+    broadenedTo: [],
+  };
+  await recordSearchEvent(supabase, query, exactCount, empty);
+  return empty;
 }
