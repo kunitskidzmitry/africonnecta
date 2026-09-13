@@ -1095,3 +1095,135 @@ describe('переписка и уведомления', () => {
     expect(data).toEqual([]);
   });
 });
+
+describe('ACS и верификация', () => {
+  afterEach(async () => {
+    await db.query('delete from public.african_context_scores where expert_id = $1', [
+      EXPERT_PUBLIC,
+    ]);
+    await db.query('delete from public.match_results');
+    await db.query('delete from public.match_runs');
+    await db.query(
+      `delete from public.verification_requests
+       where subject_id = $1`,
+      [INSTITUTION_UNVERIFIED],
+    );
+  });
+
+  it('эксперт пишет свой ACS; чужой эксперт и гость не читают разбивку', async () => {
+    const { data, error } = await as('expert')
+      .from('african_context_scores')
+      .insert({
+        expert_id: EXPERT_PUBLIC,
+        algorithm_version: 'acs.1',
+        total: 42,
+        components: { academic_engagement: { raw: 50, confidence: 0.5, weighted: 6.25 } },
+        inputs_hash: 'test-hash',
+        computed_by: USER_EXPERT,
+      })
+      .select('id, total')
+      .single();
+
+    expect(error).toBeNull();
+    expect(Number(data?.total)).toBe(42);
+
+    const { data: own } = await as('expert')
+      .from('african_context_scores')
+      .select('total')
+      .eq('id', data!.id);
+    expect(Number(own?.[0]?.total)).toBe(42);
+
+    const { data: leaked } = await as('hiddenExpert')
+      .from('african_context_scores')
+      .select('id')
+      .eq('id', data!.id);
+    expect(leaked).toEqual([]);
+
+    const { data: guestData } = await guest()
+      .from('african_context_scores')
+      .select('id')
+      .eq('id', data!.id);
+    expect(guestData).toEqual([]);
+
+    const { data: adminSees } = await as('admin')
+      .from('african_context_scores')
+      .select('total')
+      .eq('id', data!.id);
+    expect(Number(adminSees?.[0]?.total)).toBe(42);
+  });
+
+  it('член институции пишет match_run; чужой эксперт не читает', async () => {
+    const { data: run, error } = await as('institution')
+      .from('match_runs')
+      .insert({
+        actor_user_id: USER_INSTITUTION,
+        institution_id: INSTITUTION_VERIFIED,
+        opportunity_id: OPPORTUNITY_PUBLISHED,
+        query: { test: true },
+        algorithm_version: 'match.1',
+      })
+      .select('id')
+      .single();
+
+    expect(error).toBeNull();
+
+    const { error: resultError } = await as('institution')
+      .from('match_results')
+      .insert({
+        match_run_id: run!.id,
+        expert_id: EXPERT_PUBLIC,
+        rank: 1,
+        total_score: 0.8,
+        factors: { expertise: 1 },
+      });
+    expect(resultError).toBeNull();
+
+    const { data: leaked } = await as('expert')
+      .from('match_results')
+      .select('expert_id')
+      .eq('match_run_id', run!.id);
+    expect(leaked ?? []).toEqual([]);
+  });
+
+  it('админ верифицирует институцию; член не ставит verified_at напрямую', async () => {
+    const { data: direct } = await as('unverifiedInstitution')
+      .from('institutions')
+      .update({ verified_at: new Date().toISOString() })
+      .eq('id', INSTITUTION_UNVERIFIED)
+      .select('verified_at');
+    expect(direct ?? []).toEqual([]);
+
+    const { error } = await as('admin').rpc('admin_set_institution_verified', {
+      target_institution_id: INSTITUTION_UNVERIFIED,
+      approve: true,
+      reason: 'Manual review of registration documents',
+    });
+    expect(error).toBeNull();
+
+    const { rows } = await db.query(
+      'select verified_at is not null as ok from public.institutions where id = $1',
+      [INSTITUTION_UNVERIFIED],
+    );
+    expect(rows[0]?.ok).toBe(true);
+
+    await as('admin').rpc('admin_set_institution_verified', {
+      target_institution_id: INSTITUTION_UNVERIFIED,
+      approve: false,
+      reason: 'Reset after access-matrix test',
+    });
+  });
+
+  it('не-админ не решает verification_request', async () => {
+    const { data: request } = await as('unverifiedInstitution').rpc(
+      'request_institution_verification',
+    );
+    expect(request).toEqual(expect.any(String));
+
+    const { error } = await as('institution').rpc('decide_verification_request', {
+      request_id: request!,
+      approve: true,
+      reason: 'IDOR attempt',
+    });
+    expect(error?.code).toBe('42501');
+  });
+});

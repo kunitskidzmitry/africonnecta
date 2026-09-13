@@ -289,3 +289,30 @@ values (
   (select id::text from expertise where slug = 'artificial-intelligence'),
   true
 );
+
+-- ACS inputs for Yves (M5): academic + policy experience in Rwanda.
+insert into experiences (expert_id, organization, role, country_id, type, started_on, ended_on)
+values
+  (
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    'University of Rwanda',
+    'Lecturer',
+    (select id from countries where iso2 = 'RW'),
+    'academic',
+    '2018-01-01',
+    null
+  ),
+  (
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    'Ministry of Finance',
+    'Policy adviser',
+    (select id from countries where iso2 = 'RW'),
+    'policy',
+    '2020-01-01',
+    '2022-12-31'
+  );
+
+insert into expert_availability (expert_id, mode, role)
+values
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'hybrid', 'guest_lecturer'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'online', 'research_partner');

@@ -28,9 +28,10 @@ export default async function OpportunityDetailPage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const [t, tm, session, opportunity] = await Promise.all([
+  const [t, tm, ts, session, opportunity] = await Promise.all([
     getTranslations('Opportunities'),
     getTranslations('Messaging'),
+    getTranslations('Scoring'),
     getAppSession(),
     getOpportunity(id),
   ]);
@@ -88,16 +89,24 @@ export default async function OpportunityDetailPage({
       ) : null}
 
       {isOwner && opportunity.status === 'published' ? (
-        <form action={closeOpportunity}>
-          <input type="hidden" name="locale" value={locale} />
-          <input type="hidden" name="opportunityId" value={id} />
-          <button
-            type="submit"
-            className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:border-slate-900"
+        <div className="flex flex-wrap gap-3">
+          <form action={closeOpportunity}>
+            <input type="hidden" name="locale" value={locale} />
+            <input type="hidden" name="opportunityId" value={id} />
+            <button
+              type="submit"
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:border-slate-900"
+            >
+              {t('close')}
+            </button>
+          </form>
+          <Link
+            href={`/opportunities/${id}/matches`}
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
           >
-            {t('close')}
-          </button>
-        </form>
+            {ts('matchCta')}
+          </Link>
+        </div>
       ) : null}
 
       {isExpert && opportunity.status === 'published' ? (

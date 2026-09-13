@@ -40,6 +40,8 @@
     "notifications": "Notifications",
     "unreadBadge": "{count} unread",
     "invitations": "Invitations",
+    "acs": "My ACS",
+    "verification": "Verification",
     "signIn": "Sign in",
     "register": "Create account",
     "profile": "My profile",
@@ -96,6 +98,58 @@
     "unverified": "Your institution must be verified before contacting experts.",
     "quotaInstitution": "Your institution has used today’s first-contact quota.",
     "quotaUser": "You have used today’s first-contact quota.",
+    "unknown": "Something went wrong on our side. Please try again."
+  },
+  "Scoring": {
+    "acsTitle": "African Context Score",
+    "acsSubtitle": "How your profile scores for African relevance. Claimed data uses lower confidence until verified.",
+    "acsTotalLabel": "Your score",
+    "acsVersion": "Algorithm {version}",
+    "componentMeta": "raw {raw} · confidence {confidence}",
+    "recompute": "Recompute score",
+    "recomputing": "Recomputing…",
+    "recomputeSuccess": "Score updated.",
+    "disputeTitle": "Dispute this score",
+    "disputeHint": "You cannot edit the score directly. Explain what looks wrong and we will review the inputs.",
+    "disputeSubmit": "Submit dispute",
+    "disputing": "Submitting…",
+    "disputeSuccess": "Dispute recorded.",
+    "backToProfile": "Back to profile",
+    "matchesTitle": "Matched experts",
+    "matchesSubtitle": "Two-stage ranking: hard filters and expertise floor, then weighted score. Embeddings are deferred (Q7).",
+    "matchesEmpty": "Run a match to rank published experts for this opportunity.",
+    "matchesNoResults": "No experts passed the filters for this opportunity.",
+    "runMatch": "Run matching",
+    "backToOpportunity": "Back to opportunity",
+    "factorsLine": "Expertise {expertise}% · ACS {acs}% · Research {research}% · Language {language}% · Availability {availability}%",
+    "matchCta": "Find matching experts",
+    "verificationTitle": "Verification queue",
+    "verificationSubtitle": "Domain email and manual affiliation checks. ORCID is Phase 1.5.",
+    "verificationEmpty": "No verification requests yet.",
+    "fieldReason": "Reason (required for audit)",
+    "approve": "Approve",
+    "reject": "Reject",
+    "requestVerification": "Request institution verification",
+    "components": {
+      "academic_engagement": "Academic engagement",
+      "geographical_expertise": "Geographical expertise",
+      "policy_development": "Policy & development experience",
+      "contribution": "Local / diaspora contribution",
+      "language_cultural": "Language & cultural competency"
+    },
+    "subjectTypes": {
+      "institution": "Institution",
+      "expert_affiliation": "Expert affiliation"
+    },
+    "methods": {
+      "domain_email": "Domain email",
+      "manual": "Manual review"
+    }
+  },
+  "ScoringErrors": {
+    "forbidden": "You do not have permission to do that.",
+    "reasonRequired": "Enter a reason.",
+    "noScore": "Compute a score before disputing.",
     "unknown": "Something went wrong on our side. Please try again."
   },
   "Opportunities": {

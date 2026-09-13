@@ -34,6 +34,259 @@ export type Database = {
   }
   public: {
     Tables: {
+
+      acs_disputes: {
+        Row: {
+          created_at: string
+          created_by: string
+          expert_id: string
+          id: string
+          reason: string
+          resolved_at: string | null
+          resolver_note: string | null
+          score_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expert_id: string
+          id?: string
+          reason: string
+          resolved_at?: string | null
+          resolver_note?: string | null
+          score_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expert_id?: string
+          id?: string
+          reason?: string
+          resolved_at?: string | null
+          resolver_note?: string | null
+          score_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      african_context_scores: {
+        Row: {
+          algorithm_version: string
+          components: Json
+          computed_at: string
+          computed_by: string | null
+          expert_id: string
+          id: string
+          inputs_hash: string
+          total: number
+        }
+        Insert: {
+          algorithm_version: string
+          components: Json
+          computed_at?: string
+          computed_by?: string | null
+          expert_id: string
+          id?: string
+          inputs_hash: string
+          total: number
+        }
+        Update: {
+          algorithm_version?: string
+          components?: Json
+          computed_at?: string
+          computed_by?: string | null
+          expert_id?: string
+          id?: string
+          inputs_hash?: string
+          total?: number
+        }
+        Relationships: []
+      }
+      education: {
+        Row: {
+          created_at: string
+          degree: string
+          expert_id: string
+          field: string | null
+          id: string
+          institution_name: string
+          year_end: number | null
+          year_start: number | null
+        }
+        Insert: {
+          created_at?: string
+          degree: string
+          expert_id: string
+          field?: string | null
+          id?: string
+          institution_name: string
+          year_end?: number | null
+          year_start?: number | null
+        }
+        Update: {
+          created_at?: string
+          degree?: string
+          expert_id?: string
+          field?: string | null
+          id?: string
+          institution_name?: string
+          year_end?: number | null
+          year_start?: number | null
+        }
+        Relationships: []
+      }
+      experiences: {
+        Row: {
+          country_id: number | null
+          created_at: string
+          ended_on: string | null
+          expert_id: string
+          id: string
+          organization: string
+          role: string
+          started_on: string | null
+          type: Database["public"]["Enums"]["experience_type"]
+        }
+        Insert: {
+          country_id?: number | null
+          created_at?: string
+          ended_on?: string | null
+          expert_id: string
+          id?: string
+          organization: string
+          role: string
+          started_on?: string | null
+          type: Database["public"]["Enums"]["experience_type"]
+        }
+        Update: {
+          country_id?: number | null
+          created_at?: string
+          ended_on?: string | null
+          expert_id?: string
+          id?: string
+          organization?: string
+          role?: string
+          started_on?: string | null
+          type?: Database["public"]["Enums"]["experience_type"]
+        }
+        Relationships: []
+      }
+      expert_availability: {
+        Row: {
+          expert_id: string
+          mode: Database["public"]["Enums"]["availability_mode"]
+          role: Database["public"]["Enums"]["availability_role"]
+        }
+        Insert: {
+          expert_id: string
+          mode: Database["public"]["Enums"]["availability_mode"]
+          role: Database["public"]["Enums"]["availability_role"]
+        }
+        Update: {
+          expert_id?: string
+          mode?: Database["public"]["Enums"]["availability_mode"]
+          role?: Database["public"]["Enums"]["availability_role"]
+        }
+        Relationships: []
+      }
+      match_results: {
+        Row: {
+          expert_id: string
+          factors: Json
+          match_run_id: string
+          rank: number
+          total_score: number
+        }
+        Insert: {
+          expert_id: string
+          factors: Json
+          match_run_id: string
+          rank: number
+          total_score: number
+        }
+        Update: {
+          expert_id?: string
+          factors?: Json
+          match_run_id?: string
+          rank?: number
+          total_score?: number
+        }
+        Relationships: []
+      }
+      match_runs: {
+        Row: {
+          actor_user_id: string
+          algorithm_version: string
+          created_at: string
+          id: string
+          institution_id: string
+          opportunity_id: string | null
+          query: Json
+        }
+        Insert: {
+          actor_user_id: string
+          algorithm_version: string
+          created_at?: string
+          id?: string
+          institution_id: string
+          opportunity_id?: string | null
+          query?: Json
+        }
+        Update: {
+          actor_user_id?: string
+          algorithm_version?: string
+          created_at?: string
+          id?: string
+          institution_id?: string
+          opportunity_id?: string | null
+          query?: Json
+        }
+        Relationships: []
+      }
+      verification_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          evidence: Json
+          id: string
+          method: Database["public"]["Enums"]["verification_method"]
+          requested_by: string
+          status: Database["public"]["Enums"]["verification_status"]
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["verification_subject"]
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          evidence?: Json
+          id?: string
+          method: Database["public"]["Enums"]["verification_method"]
+          requested_by: string
+          status?: Database["public"]["Enums"]["verification_status"]
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["verification_subject"]
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          evidence?: Json
+          id?: string
+          method?: Database["public"]["Enums"]["verification_method"]
+          requested_by?: string
+          status?: Database["public"]["Enums"]["verification_status"]
+          subject_id?: string
+          subject_type?: Database["public"]["Enums"]["verification_subject"]
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           cover_letter: string | null
@@ -1151,6 +1404,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+
+      admin_set_institution_verified: {
+        Args: { approve: boolean; reason: string; target_institution_id: string }
+        Returns: undefined
+      }
+      decide_verification_request: {
+        Args: { approve: boolean; reason: string; request_id: string }
+        Returns: undefined
+      }
+      request_institution_verification: { Args: never; Returns: string }
       can_read_conversation: {
         Args: { target_conversation_id: string }
         Returns: boolean
@@ -1272,6 +1535,19 @@ export type Database = {
       }
     }
     Enums: {
+
+      availability_mode: "online" | "hybrid" | "onsite"
+      availability_role:
+        | "guest_lecturer"
+        | "research_partner"
+        | "mentor"
+        | "conference_speaker"
+        | "consultant"
+        | "thesis_supervisor"
+      experience_type: "academic" | "policy" | "development" | "industry"
+      verification_method: "domain_email" | "manual"
+      verification_status: "pending" | "approved" | "rejected"
+      verification_subject: "institution" | "expert_affiliation"
       academic_level: "professor" | "lecturer" | "researcher" | "phd_candidate"
       application_status:
         | "submitted"
@@ -1466,6 +1742,20 @@ export const Constants = {
   },
   public: {
     Enums: {
+
+      availability_mode: ["online", "hybrid", "onsite"],
+      availability_role: [
+        "guest_lecturer",
+        "research_partner",
+        "mentor",
+        "conference_speaker",
+        "consultant",
+        "thesis_supervisor",
+      ],
+      experience_type: ["academic", "policy", "development", "industry"],
+      verification_method: ["domain_email", "manual"],
+      verification_status: ["pending", "approved", "rejected"],
+      verification_subject: ["institution", "expert_affiliation"],
       academic_level: ["professor", "lecturer", "researcher", "phd_candidate"],
       application_status: [
         "submitted",

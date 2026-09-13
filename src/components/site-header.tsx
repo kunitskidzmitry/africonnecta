@@ -64,10 +64,31 @@ export async function SiteHeader() {
                     {t('profile')}
                   </Link>
                   <Link
+                    href="/acs"
+                    className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
+                  >
+                    {t('acs')}
+                  </Link>
+                  <Link
                     href="/invitations"
                     className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
                   >
                     {t('invitations')}
+                  </Link>
+                </>
+              ) : active.role === 'admin' ? (
+                <>
+                  <Link
+                    href="/admin/verification"
+                    className="inline-flex min-h-10 items-center text-slate-600 hover:text-slate-900"
+                  >
+                    {t('verification')}
+                  </Link>
+                  <Link
+                    href="/welcome"
+                    className="inline-flex min-h-10 items-center font-medium text-slate-900 hover:underline"
+                  >
+                    {t('account')}
                   </Link>
                 </>
               ) : (
